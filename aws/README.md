@@ -4,7 +4,7 @@ This directory contains the AWS Lambda container deployment for Sorot.AI film an
 
 ## Architecture
 
-- **Frontend**: React + Vite (deployed on Netlify/Vercel)
+- **Frontend**: React + Vite (deployed on AWS Lambda)
 - **Backend**: AWS Lambda Container with Node.js 18
 - **AI Models**:
   - Primary: OpenAI gpt-oss-120b via AWS Bedrock
