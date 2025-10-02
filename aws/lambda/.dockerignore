@@ -1,0 +1,53 @@
+# Node modules
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist
+build
+.next
+.nuxt
+
+# Frontend files (not needed for Lambda)
+src
+public
+index.html
+vite.config.*
+tailwind.config.*
+postcss.config.*
+
+# Development files
+.env*
+!.env.aws
+*.log
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+!aws/README.md
+
+# Scripts (keep deployment scripts)
+scripts
+!aws/scripts
+
+# Test files
+test
+test-*
+*.test.*
+*.spec.*
+
+# Temporary files
+tmp
+temp
+.tmp

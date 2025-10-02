@@ -11,7 +11,7 @@ class ApiClient {
   private baseUrl: string
 
   constructor(baseUrl?: string) {
-    // In development, Vite proxy will handle /.netlify/functions routing to localhost:8888
+    // In development, Vite proxy will handle API routing to AWS Lambda container
     // In production, use the configured BASE_URL
     if (typeof window !== 'undefined') {
       // Browser environment - use relative URLs for proxy in development

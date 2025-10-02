@@ -32,10 +32,14 @@ export default defineConfig({
     port: 5174,
     host: true,
     proxy: {
-      '/.netlify/functions': {
-        target: 'http://localhost:8888',
+      // Proxy API calls to AWS Lambda container
+      '/analyze': {
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path,
+      },
+      '/status': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
       },
     },
   },

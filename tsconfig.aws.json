@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
+    "module": "node16",
+    "moduleResolution": "node16",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "outDir": "./dist",
+    "rootDir": "./aws/lambda",
+    "removeComments": true,
+    "noEmitOnError": true,
+    "sourceMap": false
+  },
+  "include": [
+    "aws/lambda/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "src",
+    "dist"
+  ]
+}
