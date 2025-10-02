@@ -19,9 +19,9 @@
 
 ### 1.2 Google AI Studio Setup
 - [ ] Akun Google AI Studio aktif
-- [ ] API key Gemini berhasil dibuat
+- [x] API key Gemini berhasil dibuat
 - [ ] API key diuji dengan test request
-- [ ] API key disimpan aman (tidak di-commit)
+- [x] API key disimpan aman (tidak di-commit)
 
 ### 1.3 AWS Setup
 - [ ] Akun AWS aktif dengan billing alerts
@@ -79,16 +79,16 @@
 - [ ] Barrel exports (index.ts) dibuat untuk setiap feature
 
 ### 3.2 Core Components
-- [ ] Button component (shadcn/ui style) dibuat
-- [ ] FileUploadArea component dengan drag-drop dibuat
-- [ ] TrailerUrlInput component dengan validation dibuat
-- [ ] AnalysisProgress component dengan animated states dibuat
-- [ ] AnalysisResults component dengan collapsible sections dibuat
+- [x] Button component (shadcn/ui style) dibuat
+- [x] FileUploadArea component dengan drag-drop dibuat
+- [x] TrailerUrlInput component dengan validation dibuat
+- [x] AnalysisProgress component dengan animated states dibuat
+- [x] AnalysisResults component dengan collapsible sections dibuat
 
 ### 3.3 State Management
-- [ ] Zustand store untuk analysis state dikonfigurasi
-- [ ] Store methods: setCurrentAnalysis, addToHistory, setAnalyzing, setError
-- [ ] State structure: currentAnalysis, analysisHistory, isAnalyzing, error
+- [x] Zustand store untuk analysis state dikonfigurasi
+- [x] Store methods: setCurrentAnalysis, addToHistory, setAnalyzing, setError
+- [x] State structure: currentAnalysis, analysisHistory, isAnalyzing, error
 
 ---
 
