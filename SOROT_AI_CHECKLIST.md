@@ -10,12 +10,12 @@
 ## 🔧 Environment Setup
 
 ### 1.1 Development Tools
-- [ ] Node.js 18+ LTS terinstall
-- [ ] npm 9.x terinstall dan berfungsi
-- [ ] pnpm terinstall secara global
-- [ ] Git terinstall dan dikonfigurasi
-- [ ] VS Code/Cursor IDE terinstall
-- [ ] Extensions TypeScript, Prettier, ESLint terinstall
+- [x] Node.js 18+ LTS terinstall
+- [x] npm 9.x terinstall dan berfungsi
+- [x] pnpm terinstall secara global
+- [x] Git terinstall dan dikonfigurasi
+- [x] VS Code/Cursor IDE terinstall
+- [x] Extensions TypeScript, Prettier, ESLint terinstall
 
 ### 1.2 Google AI Studio Setup
 - [ ] Akun Google AI Studio aktif
