@@ -27,7 +27,7 @@ export async function processFilmAnalysis(
     .map(([key]) => key)
 
   if (missingKeys.length > 0) {
-    throw new Error(`Missing required environment variables: ${missingKeys.join(', ')}\n\nPlease ensure all required API keys are set in your Netlify environment variables.`)
+    throw new Error(`Missing required environment variables: ${missingKeys.join(', ')}\n\nPlease ensure all required API keys are set in your AWS Lambda environment variables.`)
   }
 
   console.log('Environment validation passed - all required API keys present')

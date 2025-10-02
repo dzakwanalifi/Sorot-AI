@@ -22,7 +22,7 @@ function App() {
 
         <footer className="text-center mt-16 text-sm text-muted-foreground border-t pt-8">
           <p>© 2025 Sorot.AI - Built with React 19, TypeScript & Tailwind CSS</p>
-          <p className="mt-1">Dual AI Analysis: OpenAI + Google Gemini | Serverless on Netlify</p>
+          <p className="mt-1">Dual AI Analysis: OpenAI + Google Gemini | Serverless on AWS Lambda</p>
         </footer>
       </div>
     </div>

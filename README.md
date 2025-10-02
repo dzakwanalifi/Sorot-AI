@@ -13,7 +13,7 @@ This hybrid approach ensures comprehensive film analysis regardless of trailer c
 ## Tech Stack
 
 - **Frontend**: React 19.x + Vite 5.x + TypeScript + Tailwind CSS 3.4+
-- **Backend**: Netlify Functions (Node.js 18+)
+- **Backend**: AWS Lambda Container (Node.js 18+)
 - **AI Models**:
   - OpenAI gpt-oss-120b (AWS Bedrock) - Primary analysis
   - Gemini 2.5 Flash-Lite (Google Generative AI) - Visual fallback
@@ -106,10 +106,16 @@ aws/
 
 ## Deployment
 
-Deploy to Netlify with these build settings:
-- **Build command**: `pnpm build`
+### Frontend
+Deploy to Netlify/Vercel with these build settings:
+- **Build command**: `npm run build`
 - **Publish directory**: `dist`
 - **Node version**: 18.x
+
+### Backend (AWS Lambda)
+- **Container**: Docker image
+- **Runtime**: Node.js 18+
+- **Build**: `./aws/scripts/build-and-deploy.sh`
 
 ## Cost Estimation (Monthly)
 

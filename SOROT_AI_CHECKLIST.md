@@ -259,7 +259,7 @@
 - [ ] README dengan setup instructions
 
 ### 10.2 API Documentation
-- [ ] Netlify Function endpoints documented
+- [ ] AWS Lambda API Gateway endpoints documented
 - [ ] Request/response formats specified
 - [ ] Error response examples
 - [ ] Authentication requirements (jika ada)
@@ -322,4 +322,4 @@
 
 ---
 
-*Checklist ini dibuat berdasarkan Sorot.AI Development Rules untuk migrasi dari Netlify ke AWS Lambda container. Fokus pada cost optimization dan serverless architecture.*
+*Checklist ini dibuat berdasarkan Sorot.AI Development Rules untuk implementasi AWS Lambda container. Fokus pada cost optimization dan serverless architecture.*
