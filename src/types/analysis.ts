@@ -55,6 +55,8 @@ export interface AnalysisState {
   progress: {
     stage: string
     percentage: number
+    currentStep?: number
+    totalSteps?: number
   } | null
 }
 

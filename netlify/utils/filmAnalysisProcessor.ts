@@ -8,7 +8,8 @@ import type { FilmAnalysis } from '../../src/types/analysis'
 export async function processFilmAnalysis(
   pdfData: string,
   trailerUrl: string,
-  inputType: 'file' | 'text' = 'file'
+  inputType: 'file' | 'text' = 'file',
+  onProgress?: (step: number, stepName: string, progress: number) => void
 ): Promise<FilmAnalysis> {
   const startTime = Date.now()
   let transcript: string | null = null
@@ -21,40 +22,52 @@ export async function processFilmAnalysis(
 
   try {
     // Step 1: Extract text from PDF or text input
+    onProgress?.(1, 'Processing PDF', 20)
     console.log(`Step 1: Extracting text from ${inputType === 'text' ? 'text input' : 'PDF'}...`)
     const synopsis = await extractTextFromPDF(pdfData, inputType)
     console.log(`Extracted ${synopsis.length} characters from ${inputType === 'text' ? 'text input' : 'PDF'}`)
+    onProgress?.(1, 'Extracting Synopsis', 40)
 
     // Step 2: Download video audio (required for real API mode)
+    onProgress?.(2, 'Downloading Trailer', 50)
     console.log('Step 2: Downloading video audio...')
     const audioPath = await downloadVideoAudio(trailerUrl)
     console.log('Audio downloaded successfully')
+    onProgress?.(2, 'Downloading Trailer', 70)
 
     // Step 3: Attempt transcription (will fail since S3 is removed)
+    onProgress?.(3, 'Transcribing Audio', 75)
     console.log('Step 3: Attempting audio transcription...')
     try {
       transcript = await transcribeAudio(audioPath)
       console.log(`Transcription completed: ${transcript.length} characters`)
+      onProgress?.(3, 'Transcribing Audio', 85)
     } catch (transcribeError) {
       const errorMessage = transcribeError instanceof Error ? transcribeError.message : 'Unknown transcription error'
       console.warn('Transcription failed (S3 removed):', errorMessage)
       console.log('Using fallback transcript for visual analysis only')
       transcript = 'Audio transcription unavailable (S3 removed). Using visual analysis only.'
+      onProgress?.(3, 'Transcribing Audio', 85)
     }
 
     // Step 4: AI Analysis
+    onProgress?.(4, 'AI Analysis', 90)
     console.log('Step 4: Running AI analysis...')
     const analysisResult = await analyzeFilmContent(synopsis, transcript, trailerUrl)
+    onProgress?.(4, 'AI Analysis', 95)
 
     // Step 5: Generate audio briefing (will fail since S3 is removed)
+    onProgress?.(5, 'Generating Audio Brief', 98)
     console.log('Step 5: Generating audio briefing...')
     let audioUrl: string
     try {
       audioUrl = await generateAudioBriefing(analysisResult)
+      onProgress?.(5, 'Analysis Complete', 100)
     } catch (audioError) {
       const errorMessage = audioError instanceof Error ? audioError.message : 'Unknown audio generation error'
       console.warn('Audio briefing generation failed (S3 removed):', errorMessage)
       audioUrl = 'Audio briefing unavailable (S3 removed for temporary data)'
+      onProgress?.(5, 'Analysis Complete', 100)
     }
 
     const processingTime = Date.now() - startTime

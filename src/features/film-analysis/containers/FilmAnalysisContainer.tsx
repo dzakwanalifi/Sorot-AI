@@ -13,6 +13,23 @@ import { apiClient } from '../../../shared/services'
 import { fileToBase64 } from '../../../shared/utils'
 import type { FilmAnalysis } from '@/types/analysis'
 
+// API Response types
+interface AnalysisStartResponse {
+  analysisId: string
+  status: string
+  message: string
+}
+
+interface AnalysisProgressResponse {
+  status: 'processing' | 'completed' | 'failed'
+  currentStep: number
+  totalSteps: number
+  stepName: string
+  progress: number
+  result?: FilmAnalysis
+  error?: string
+}
+
 export const FilmAnalysisContainer: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [synopsisText, setSynopsisText] = useState('')
@@ -20,7 +37,7 @@ export const FilmAnalysisContainer: React.FC = () => {
   const [trailerUrl, setTrailerUrl] = useState('')
   const [currentStep, setCurrentStep] = useState<'upload' | 'url' | 'analyze' | 'results'>('upload')
 
-  const { currentAnalysis, isAnalyzing, error, setAnalyzing, setError, setCurrentAnalysis } = useAnalysisStore()
+  const { currentAnalysis, isAnalyzing, error, setAnalyzing, setError, setCurrentAnalysis, setProgress } = useAnalysisStore()
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file)
@@ -41,6 +58,7 @@ export const FilmAnalysisContainer: React.FC = () => {
     setCurrentStep('analyze')
     setAnalyzing(true)
     setError(null)
+    setProgress({ stage: 'upload', percentage: 10 })
 
     try {
       let pdfData: string
@@ -64,38 +82,77 @@ export const FilmAnalysisContainer: React.FC = () => {
         inputType
       })
 
-      // Call Netlify function API
-      const response = await apiClient.post<FilmAnalysis>('/.netlify/functions/analyze-film', {
+      // Start the analysis
+      const response = await apiClient.post<AnalysisStartResponse>('/.netlify/functions/analyze-film', {
         pdfData,
         trailerUrl: url,
         inputType
       })
 
-      if (response.success && response.data) {
-        // Handle double-wrapped API response: response.data is {success: true, data: filmAnalysis}
-        const analysisData = response.data.data || response.data
+      if (response.success && response.data?.analysisId) {
+        const analysisId = response.data.analysisId
 
-        console.log('Analysis response data:', response.data)
-        console.log('Analysis data keys:', Object.keys(analysisData))
-        console.log('Analysis data structure check:', {
-          hasScores: !!analysisData.scores,
-          hasInsights: !!analysisData.insights,
-          scoresType: typeof analysisData.scores,
-          overallScore: analysisData.scores?.overall,
-          overallType: typeof analysisData.scores?.overall,
-          fullDataString: JSON.stringify(analysisData).substring(0, 300) + '...'
-        })
-        setCurrentAnalysis(analysisData)
-        setCurrentStep('results')
+        // Poll for progress updates
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusResponse = await apiClient.get<AnalysisProgressResponse>(`/.netlify/functions/analysis-status?id=${analysisId}`)
+
+            if (statusResponse.success && statusResponse.data) {
+              const progress = statusResponse.data
+
+              // Map backend step numbers to frontend stage names
+              const stageMapping = {
+                1: 'upload',
+                2: 'download',
+                3: 'transcribe',
+                4: 'analyze',
+                5: 'generate'
+              }
+
+              const stage = stageMapping[progress.currentStep as keyof typeof stageMapping] || 'analyze'
+
+              setProgress({
+                stage,
+                percentage: progress.progress,
+                currentStep: progress.currentStep,
+                totalSteps: progress.totalSteps
+              })
+
+              if (progress.status === 'completed' && progress.result) {
+                clearInterval(pollInterval)
+                setProgress({ stage: 'complete', percentage: 100 })
+                setCurrentAnalysis(progress.result)
+                setCurrentStep('results')
+                setAnalyzing(false)
+              } else if (progress.status === 'failed') {
+                clearInterval(pollInterval)
+                setError(progress.error || 'Analysis failed')
+                setAnalyzing(false)
+              }
+            }
+          } catch (pollError) {
+            console.error('Error polling status:', pollError)
+            // Continue polling despite errors
+          }
+        }, 2000) // Poll every 2 seconds
+
+        // Stop polling after 5 minutes as fallback
+        setTimeout(() => {
+          clearInterval(pollInterval)
+          if (isAnalyzing) {
+            setError('Analysis timed out. Please try again.')
+            setAnalyzing(false)
+          }
+        }, 300000) // 5 minutes
+
       } else {
-        throw new Error(response.error || 'Analysis failed')
+        throw new Error(response.data?.message || response.error || 'Failed to start analysis')
       }
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Analysis failed. Please try again.'
       setError(errorMessage)
       console.error('Analysis error:', err)
-    } finally {
       setAnalyzing(false)
     }
   }

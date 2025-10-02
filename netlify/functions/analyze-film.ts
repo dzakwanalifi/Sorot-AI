@@ -1,5 +1,77 @@
 import { Handler } from '@netlify/functions'
 import { processFilmAnalysis } from '../utils/filmAnalysisProcessor'
+import { progressStore, updateProgress, completeProgress, failProgress } from '../utils/progressStore'
+
+// Status endpoint for checking analysis progress
+export const statusHandler: Handler = async (event) => {
+  // Enable CORS
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Content-Type': 'application/json'
+  }
+
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    }
+  }
+
+  // Only allow GET requests
+  if (event.httpMethod !== 'GET') {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: 'Method not allowed' })
+    }
+  }
+
+  try {
+    const analysisId = event.queryStringParameters?.id
+    if (!analysisId) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Analysis ID required' })
+      }
+    }
+
+    const progress = progressStore.getProgress(analysisId)
+    if (!progress) {
+      return {
+        statusCode: 404,
+        headers,
+        body: JSON.stringify({ error: 'Analysis not found' })
+      }
+    }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        data: progress
+      })
+    }
+
+  } catch (error) {
+    console.error('Error checking analysis status:', error)
+
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      })
+    }
+  }
+}
+
 
 export const handler: Handler = async (event) => {
   // Enable CORS
@@ -19,7 +91,37 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  // Only allow POST requests
+  // Handle GET requests for status checking
+  if (event.httpMethod === 'GET') {
+    const analysisId = event.queryStringParameters?.id
+    if (!analysisId) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Analysis ID required' })
+      }
+    }
+
+    const progress = progressStore.getProgress(analysisId)
+    if (!progress) {
+      return {
+        statusCode: 404,
+        headers,
+        body: JSON.stringify({ error: 'Analysis not found' })
+      }
+    }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        data: progress
+      })
+    }
+  }
+
+  // Only allow POST requests for analysis
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -56,37 +158,35 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    // Process film analysis using real AI services
-    console.log('Starting film analysis for:', { trailerUrl, pdfSize: pdfData.length, inputType })
-    console.log('Environment check - USE_REAL_APIS:', process.env.USE_REAL_APIS)
-    console.log('Environment check - GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? `Present (${process.env.GEMINI_API_KEY?.substring(0, 20)}...)` : 'Missing')
-    console.log('Environment check - AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? 'Present' : 'Missing')
-    console.log('All env keys:', Object.keys(process.env).filter(key => key.includes('GEMINI') || key.includes('AWS') || key.includes('USE_REAL')))
+    // Generate unique analysis ID
+    const analysisId = `analysis-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-    try {
-      const analysisResult = await processFilmAnalysis(pdfData, trailerUrl, inputType)
+    // Initialize progress
+    updateProgress(analysisId, 1, 'Processing PDF', 0)
 
-      console.log('Film analysis completed successfully')
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          data: analysisResult
-        })
-      }
-    } catch (error) {
+    // Start analysis asynchronously
+    processFilmAnalysis(pdfData, trailerUrl, inputType, (step, stepName, progress) => {
+      updateProgress(analysisId, step, stepName, progress)
+    }).then((result) => {
+      completeProgress(analysisId, result)
+    }).catch((error) => {
       console.error('Film analysis failed:', error)
-      console.error('Error stack:', (error as Error).stack)
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          error: 'Film analysis failed: ' + (error as Error).message,
-          stack: process.env.NODE_ENV === 'development' ? (error as Error).stack : undefined
-        })
-      }
+      failProgress(analysisId, (error as Error).message)
+    })
+
+    // Return analysis ID immediately
+    console.log('Film analysis started with ID:', analysisId)
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        data: {
+          analysisId,
+          status: 'processing',
+          message: 'Analysis started successfully'
+        }
+      })
     }
 
   } catch (error) {
