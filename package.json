@@ -10,10 +10,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:aws": "docker build -f aws/lambda/Dockerfile -t sorot-ai-lambda .",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest",
     "test:ui": "vitest --ui",
+    "test:aws": "./aws/scripts/test-local.sh",
+    "deploy:aws": "./aws/scripts/build-and-deploy.sh",
+    "setup:aws": "./aws/scripts/setup-iam.sh",
+    "cleanup:netlify": "./aws/scripts/cleanup-netlify.sh",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

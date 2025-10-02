@@ -89,7 +89,7 @@ export const FilmAnalysisContainer: React.FC = () => {
       })
 
       // Start the analysis
-      const response = await apiClient.post<AnalysisStartResponse>('/.netlify/functions/analyze-film', {
+      const response = await apiClient.post<AnalysisStartResponse>('/analyze', {
         pdfData,
         trailerUrl: url,
         inputType
@@ -101,11 +101,12 @@ export const FilmAnalysisContainer: React.FC = () => {
         // Smart polling with exponential backoff for better performance
         let pollCount = 0
         let pollInterval: NodeJS.Timeout
-        let timeoutId: NodeJS.Timeout
+        // eslint-disable-next-line prefer-const
+        let timeoutId: NodeJS.Timeout | undefined
 
         const smartPolling = async () => {
           try {
-            const statusResponse = await apiClient.get<AnalysisProgressResponse>(`/.netlify/functions/analysis-status?id=${analysisId}`)
+            const statusResponse = await apiClient.get<AnalysisProgressResponse>(`/status?id=${analysisId}`)
 
             if (statusResponse.success && statusResponse.data?.data) {
               const progress = statusResponse.data.data
@@ -131,7 +132,7 @@ export const FilmAnalysisContainer: React.FC = () => {
 
               if (progress.status === 'completed' && progress.result) {
                 clearInterval(pollInterval)
-                clearTimeout(timeoutId)
+                if (timeoutId) clearTimeout(timeoutId)
                 setProgress({ stage: 'complete', percentage: 100 })
                 setCurrentAnalysis(progress.result)
                 setCurrentStep('results')
@@ -139,7 +140,7 @@ export const FilmAnalysisContainer: React.FC = () => {
                 return // Stop polling
               } else if (progress.status === 'failed') {
                 clearInterval(pollInterval)
-                clearTimeout(timeoutId)
+                if (timeoutId) clearTimeout(timeoutId)
                 setError(progress.error || 'Analysis failed')
                 setAnalyzing(false)
                 return // Stop polling

@@ -11,7 +11,7 @@ console.log('Initializing Gemini client with API key (length:', GEMINI_API_KEY.l
 
 // Test the API key by making a simple request
 let genAI: GoogleGenerativeAI
-let model: any
+let model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>
 
 try {
   genAI = new GoogleGenerativeAI(GEMINI_API_KEY)

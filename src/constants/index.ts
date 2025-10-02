@@ -2,11 +2,13 @@
 
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: ((import.meta as any).env?.PROD)
-    ? 'https://sorot-ai.netlify.app'
-    : 'http://localhost:5173',
-  FUNCTIONS_BASE: '/.netlify/functions',
-  TIMEOUT: 300000, // 5 minutes for AI processing
+  // AWS Lambda API Gateway endpoint
+  BASE_URL: import.meta.env?.VITE_API_BASE_URL ||
+    (import.meta.env?.PROD
+      ? 'https://your-api-id.execute-api.us-east-1.amazonaws.com/prod'
+      : 'http://localhost:8080'),
+  FUNCTIONS_BASE: '', // Not used with AWS Lambda
+  TIMEOUT: 900000, // 15 minutes for AWS Lambda timeout
 } as const
 
 // File Upload Configuration
