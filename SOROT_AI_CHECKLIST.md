@@ -46,26 +46,26 @@
   - [x] zustand, react-dropzone, lucide-react, clsx, tailwind-merge
   - [x] @vitejs/plugin-react-swc, eslint, @typescript-eslint/*
   - [x] @google/genai, @aws-sdk/*, unpdf, yt-dlp-exec
-- [ ] Tailwind CSS dikonfigurasi
-- [ ] TypeScript path mapping dikonfigurasi
-- [ ] Zustand store untuk analysis state dibuat
+- [x] Tailwind CSS dikonfigurasi
+- [x] TypeScript path mapping dikonfigurasi
+- [x] Zustand store untuk analysis state dibuat
 
 ### 2.2 Backend (Netlify Functions)
-- [ ] netlify/functions/ directory dibuat
-- [ ] netlify/utils/ directory dibuat
-- [ ] netlify.toml dikonfigurasi
+- [x] netlify/functions/ directory dibuat
+- [x] netlify/utils/ directory dibuat
+- [x] netlify.toml dikonfigurasi
 - [x] Dependencies terinstall:
   - [x] @aws-sdk/client-bedrock-runtime, @aws-sdk/client-transcribe, @aws-sdk/client-polly
   - [x] @google/genai, unpdf, yt-dlp-exec, @types/node
 
 ### 2.3 Environment Variables
-- [ ] .env.local untuk frontend dibuat
-- [ ] .env untuk backend functions dibuat
-- [ ] Variables:
-  - [ ] GEMINI_API_KEY
-  - [ ] AWS_ACCESS_KEY_ID
-  - [ ] AWS_SECRET_ACCESS_KEY
-  - [ ] AWS_REGION=us-east-1
+- [x] .env.local untuk frontend dibuat
+- [x] .env untuk backend functions dibuat
+- [x] Variables:
+  - [x] GEMINI_API_KEY
+  - [x] AWS_ACCESS_KEY_ID
+  - [x] AWS_SECRET_ACCESS_KEY
+  - [x] AWS_REGION=us-east-1
 
 ---
 
