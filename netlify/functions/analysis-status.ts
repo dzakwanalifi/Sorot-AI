@@ -41,7 +41,10 @@ export const handler: Handler = async (event) => {
 
     // Check the shared progress store
     const progress = progressStore.getProgress(analysisId)
-    console.log(`Checking progress for analysis ${analysisId}:`, progress ? 'found' : 'not found', progress)
+    console.log(`Checking progress for analysis ${analysisId}:`, progress ? 'found' : 'not found')
+    if (progress) {
+      console.log(`Progress status: ${progress.status}, step: ${progress.currentStep}/${progress.totalSteps}, progress: ${progress.progress}%`)
+    }
     if (!progress) {
       return {
         statusCode: 404,

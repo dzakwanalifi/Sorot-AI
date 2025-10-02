@@ -82,7 +82,7 @@ function generateBriefingText(analysis: AIAnalysisResult): string {
 
     Areas for improvement: ${insights.suggestions.join('. ')}.
 
-    This analysis was generated using ${analysis.aiModel === 'openai' ? 'OpenAI GPT-4' : 'Google Gemini'} artificial intelligence.
+    This analysis was generated using ${analysis.aiModel === 'openai' ? 'OpenAI GPT OSS-120B' : 'Google Gemini'} artificial intelligence.
   `.trim().replace(/\s+/g, ' ') // Clean up formatting
 
   return text

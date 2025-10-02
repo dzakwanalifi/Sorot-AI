@@ -14,12 +14,12 @@ Sorot.AI is an AI-powered film curation platform for Indonesian film festival se
 - **State Management**: Zustand 4.x (lightweight alternative to Redux for MVP)
 - **Backend**: Netlify Functions with Node.js 18+/TypeScript
 - **AI Model**: OpenAI gpt-oss-120b (via AWS Bedrock) + Gemini 2.5 Flash-Lite (via Google Generative AI)
-- **AWS Services**: Transcribe, Bedrock, Polly
-- **Google Services**: Gemini 2.5 Flash-Lite via Google Generative AI
+- **AWS Services**: Bedrock, Polly (Transcribe tidak digunakan - pakai Gemini)
+- **Google Services**: Gemini 2.5 Flash-Lite via Google Generative AI (transcription + visual analysis)
 - **AWS SDK**: v3 modular packages (tree-shakable imports)
 - **File Processing**: unpdf (PDF extraction), yt-dlp-exec/ytdl-core (video download), ffmpeg-static (frame extraction)
 - **Google SDK**: @google/genai (Google Generative AI SDK)
-- **Deployment**: Netlify only (100% serverless)
+- **Deployment**: AWS Lambda with container images (100% serverless)
 
 ## AI Model Requirements (MANDATORY)
 
@@ -74,14 +74,17 @@ src/
 └── styles/                # Global styles and Tailwind config
 ```
 
-### Backend Structure (Netlify Functions)
+### Backend Structure (AWS Lambda Container)
 ```
-netlify/
-├── functions/
-│   ├── analyze.ts         # Main analysis endpoint
-│   ├── upload.ts          # File upload handler
-│   └── status.ts          # Processing status checker
-└── utils/                 # Shared function utilities
+aws/
+├── lambda/
+│   ├── Dockerfile         # Container build configuration
+│   ├── app.ts            # Main application entry point
+│   ├── handlers/         # Lambda handlers
+│   │   ├── analyze.ts    # Main analysis endpoint
+│   │   └── status.ts     # Processing status checker
+│   └── utils/            # Shared utilities
+└── scripts/              # Deployment scripts
 ```
 
 ### Path Mapping Configuration (Absolute Imports)
@@ -128,26 +131,26 @@ netlify/
 ## AWS Integration Patterns
 
 ### Service Usage
-- **Google Gemini 2.5 Flash-Lite**: Convert trailer audio to text transcript (primary transcription)
+- **Google Gemini 2.5 Flash-Lite**: Convert trailer audio to text transcript (primary transcription, <20MB)
 - **AWS Bedrock**: Analyze combined synopsis + transcript data (use OpenAI gpt-oss-120b model)
-- **Google Gemini 2.5 Flash-Lite**: Visual analysis fallback for silent/music-only trailers
-- **AWS Polly**: Generate audio briefings from analysis results (stream audio responses)
+- **Google Gemini 2.5 Flash-Lite**: Visual analysis fallback when transcription <50 words
+- **AWS Polly**: Generate audio briefings from analysis results (Neural voice, base64 response)
 
 ### API Design
-- Multiple Netlify Functions: `/analyze`, `/upload`, `/status`
+- Multiple Lambda functions: `/analyze`, `/status` via API Gateway
 - Request: Base64 PDF data + trailer URL (for analyze endpoint)
 - Response: Structured JSON with scores, text, audio URLs, transcripts, and processing status
-- Use Background Functions for long-running operations to avoid timeouts
+- Use container timeout configuration for long-running operations
 
 ### Data Flow
 1. Extract text from PDF using **unpdf** (modern alternative to pdf-parse)
-2. Download/process trailer audio using **yt-dlp-exec** or **ytdl-core**
-3. Submit audio to **Google Gemini 2.5 Flash-Lite** for transcription
-4. **Decision Point**: Check transcript quality
+2. Download/process trailer audio using **yt-dlp-exec** (YouTube support)
+3. Submit audio to **Google Gemini 2.5 Flash-Lite** for transcription (<20MB inline)
+4. **Decision Point**: Check transcript length (<50 words?)
    - **If good transcript**: Send transcript + synopsis to Bedrock (OpenAI gpt-oss-120b model)
-   - **If poor transcript**: Send video to Gemini 2.5 Flash-Lite for visual analysis
-5. Convert analysis results to audio via AWS Polly (stream response)
-6. Return comprehensive JSON response with error handling
+   - **If poor transcript**: Send video URL to Gemini 2.5 Flash-Lite for visual analysis
+5. Convert analysis results to audio via AWS Polly (base64 response, no S3)
+6. Return comprehensive JSON response with in-memory progress tracking
 
 ### AI Model Configuration (OpenAI gpt-oss-120b)
 - **Model ID**: `openai.gpt-oss-120b-1:0`
@@ -185,18 +188,17 @@ netlify/
 - **Performance**: Lazy loading, code splitting, and optimized re-renders
 - **Testing**: Unit tests for utilities, integration tests for components
 
-### Backend Development (Netlify Functions)
-- **Function Types**: Use Background Functions for long-running AWS operations
-- **AI Integration**: OpenAI gpt-oss-120b via Bedrock Runtime + Gemini 2.5 Flash-Lite via Google Generative AI for visual analysis
-- **AWS SDK**: v3 modular imports with proper error handling and retries
-- **Google SDK**: @google/genai for Google Generative AI integration
-- **Async Operations**: Promise-based polling for Transcribe jobs with timeout handling
-- **File Processing**: unpdf for PDF extraction, yt-dlp-exec for video downloads, ffmpeg for frame extraction
-- **Visual Processing**: Extract video frames for Gemini analysis (fallback for silent trailers)
-- **Response Format**: Structured JSON with consistent error/response schemas
-- **Security**: Input validation, environment variable usage, CORS configuration
-- **Logging**: Comprehensive logging for debugging and monitoring
-- **Model Usage**: Configure max_tokens (1000-2000) untuk cost control, enable caching untuk repeated inputs
+### Backend Development (AWS Lambda Container)
+- **Container Runtime**: Node.js 18+ with Lambda runtime API
+- **AI Integration**: OpenAI gpt-oss-120b via Bedrock + Gemini 2.5 Flash-Lite for transcription & visual analysis
+- **AWS SDK**: v3 modular imports with Polly synthesis (no Transcribe)
+- **Google SDK**: @google/genai for multimodal transcription and visual analysis
+- **Progress Tracking**: In-memory store (container restarts reset progress)
+- **File Processing**: unpdf for PDF extraction, yt-dlp-exec for YouTube downloads
+- **Environment Validation**: Strict validation - all API keys required, no mock mode
+- **Response Format**: Structured JSON with audio as base64 data URLs
+- **Security**: Input validation, environment variable validation, CORS configuration
+- **Error Handling**: Fallback logic (transcription → visual analysis → error)
 
 ### OpenAI gpt-oss-120b Implementation Guidelines
 - **Model Strengths**: Excel in coding, scientific analysis, mathematical reasoning, complex problem-solving
@@ -220,11 +222,11 @@ netlify/
 
 ### Testing Strategy
 - **Unit Tests**: Vitest for React components and utility functions
-- **Integration Tests**: Test Netlify Functions with mocked AWS services
+- **Integration Tests**: Test Lambda container with mocked AWS services
 - **E2E Tests**: Playwright for critical user flows (upload → process → results)
 - **Mocking**: MSW (Mock Service Worker) for API calls, AWS SDK mocking for local dev
 - **Coverage**: Aim for 80%+ coverage on critical business logic
-- **CI/CD**: Automated testing on Netlify builds with proper environment setup
+- **CI/CD**: Automated testing with GitHub Actions and container image builds
 
 ## Code Quality Standards
 
@@ -271,21 +273,23 @@ netlify/
 ## Deployment & Environment
 
 ### Environment Setup
-- **Netlify Configuration**: Use netlify.toml for build settings and function configuration
-- **Node.js Version**: Specify Node.js 18+ in netlify.toml and package.json engines
-- **Environment Variables**: AWS credentials + GEMINI_API_KEY in Netlify dashboard
-- **Build Commands**: Vite build with proper output directory configuration
-- **Function Runtime**: Modern Netlify functions with ES modules support
-- **Google Setup**: Obtain Gemini API key from Google AI Studio
+- **AWS Configuration**: Use ECR for container registry and Lambda for deployment
+- **Node.js Version**: Specify Node.js 18+ in Dockerfile and package.json engines
+- **Environment Variables**: Strict validation - ALL keys required (GEMINI_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION)
+- **Container Build**: Multi-stage Dockerfile for optimized Lambda container images
+- **Function Runtime**: AWS Lambda container runtime with custom entry point
+- **Google Setup**: Obtain Gemini API key from Google AI Studio (required for transcription)
+- **No Mock Mode**: Environment validation ensures all real APIs are available
 
 ### Monitoring & Observability
 - **Logging**: Structured logging with correlation IDs for request tracing
 - **Performance Monitoring**: Track API response times and function execution duration
 - **AWS Monitoring**: CloudWatch dashboards for Bedrock/Polly usage and costs
-- **Google Monitoring**: Gemini API usage and cost tracking via Google AI Studio dashboard
-- **Multi-Cloud Analytics**: Track AI model usage (Gemini transcription, OpenAI analysis, Gemini visual fallback)
-- **Error Tracking**: Sentry or similar for client-side and server-side error tracking
-- **Analytics**: Basic usage analytics for user flow optimization, including transcription success rates
+- **Google Monitoring**: Gemini API usage tracking via Google AI Studio (transcription + visual analysis)
+- **Multi-Cloud Analytics**: Track AI model usage (Gemini transcription, OpenAI analysis, Gemini visual fallback ~5%)
+- **Progress Tracking**: In-memory status (container restarts reset progress)
+- **Error Tracking**: Comprehensive error handling with CloudWatch alarms
+- **Cost Analytics**: Monitor actual usage vs $5 budget (target: $0.16-0.32 per 100 analyses)
 
 ## File Organization Rules
 
@@ -297,18 +301,21 @@ netlify/
 - **Absolute Imports**: Use configured path aliases (@features/*, @shared/*, etc.)
 
 ### Backend File Organization
-- **Function Separation**: One function per file, focused on single responsibility
-- **Shared Utilities**: Common code in netlify/utils/ with proper exports
+- **Handler Separation**: One handler per Lambda function, focused on single responsibility
+- **Shared Utilities**: Common code in aws/lambda/utils/ with proper exports
 - **TypeScript**: Full TypeScript with strict configuration and proper type definitions
 - **ES Modules**: Use ES modules throughout for better tree-shaking and compatibility
+- **Container Optimization**: Multi-stage Dockerfile for minimal container images
 - **Documentation**: JSDoc comments for all exported functions and complex logic
 
 ### Multi-Cloud Architecture
-- **Primary Path**: OpenAI gpt-oss-120b via AWS Bedrock (95%+ use cases with sufficient transcript)
-- **Fallback Path**: Gemini 2.5 Flash-Lite via Google Generative AI (silent/music-only trailers)
-- **Decision Logic**: Check transcript length (<50 words triggers visual analysis)
-- **Cost Optimization**: Minimize Gemini usage through intelligent routing
-- **Error Handling**: Graceful degradation if either service fails
+- **Transcription**: Gemini 2.5 Flash-Lite (primary, <20MB audio files)
+- **Analysis**: OpenAI gpt-oss-120b via AWS Bedrock (for good transcripts >50 words)
+- **Visual Fallback**: Gemini 2.5 Flash-Lite (when transcription fails or <50 words)
+- **Audio Generation**: AWS Polly (Neural voice, base64 response)
+- **Decision Logic**: Transcript length check (<50 words → visual analysis)
+- **Cost Optimization**: Minimize visual analysis usage (~5% of cases)
+- **Progress Tracking**: In-memory (resets on function restart)
 
 ## Naming Conventions
 
@@ -348,7 +355,7 @@ netlify/
 - Create README with setup instructions
 
 ### API Documentation
-- Document Netlify Function endpoints
+- Document AWS Lambda endpoints via API Gateway
 - Specify request/response formats
 - Include error response examples
 - Add authentication requirements if any

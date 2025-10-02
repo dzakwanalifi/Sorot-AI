@@ -25,15 +25,17 @@
 
 ### 1.3 AWS Setup
 - [x] Akun AWS aktif dengan billing alerts
-- [ ] Budget $5 diset untuk development
+- [x] Budget $5 diset untuk development
 - [x] IAM user dengan programmatic access dibuat
-- [x] Policies: AmazonTranscribeFullAccess, AmazonPollyFullAccess, AmazonBedrockFullAccess
+- [x] Policies: AmazonPollyFullAccess, AmazonBedrockFullAccess (Transcribe tidak digunakan)
 - [x] Access Key ID dan Secret Access Key disimpan aman
 
-### 1.4 Netlify Setup
-- [x] Akun Netlify aktif
-- [x] GitHub account terhubung
-- [x] Personal access token dibuat (jika perlu)
+### 1.4 AWS Lambda Setup
+- [ ] Akun AWS aktif dengan billing alerts
+- [x] Budget $5 diset untuk development
+- [x] IAM user dengan programmatic access dibuat
+- [x] Policies: AmazonPollyFullAccess, AmazonBedrockFullAccess
+- [x] Access Key ID dan Secret Access Key disimpan aman
 
 ---
 
@@ -50,23 +52,25 @@
 - [x] TypeScript path mapping dikonfigurasi
 - [x] Zustand store untuk analysis state dibuat
 
-### 2.2 Backend (Netlify Functions)
-- [x] netlify/functions/ directory dibuat
-- [x] netlify/utils/ directory dibuat
-- [x] netlify.toml dikonfigurasi
-- [x] Dependencies terinstall:
-  - [x] @aws-sdk/client-bedrock-runtime, @aws-sdk/client-transcribe, @aws-sdk/client-polly
+### 2.2 Backend (AWS Lambda Container)
+- [ ] Dockerfile untuk Lambda container dibuat
+- [ ] aws/lambda/ directory structure dibuat
+- [ ] aws/utils/ directory dibuat
+- [ ] Dependencies terinstall:
+  - [x] @aws-sdk/client-bedrock-runtime, @aws-sdk/client-polly
   - [x] @google/genai, unpdf, yt-dlp-exec, @types/node
+- [ ] Container image build script dibuat
 
 ### 2.3 Environment Variables
 - [x] .env.local untuk frontend dibuat
 - [x] .env untuk backend functions dibuat
+- [x] Strict validation: semua variables wajib ada
 - [x] Variables:
   - [x] GEMINI_API_KEY
   - [x] AWS_ACCESS_KEY_ID
   - [x] AWS_SECRET_ACCESS_KEY
   - [x] AWS_REGION=us-east-1
-- [x] USE_REAL_APIS flag untuk cost control
+- [x] Tidak ada lagi USE_REAL_APIS flag (selalu real data)
 
 ---
 
@@ -100,12 +104,13 @@
 
 ---
 
-## 🔧 Backend Development (Netlify Functions)
+## 🔧 Backend Development (AWS Lambda Container)
 
 ### 4.1 Core Functions
-- [x] analyze-film.ts main function dibuat
-- [x] CORS headers dan error handling diimplementasi
-- [x] Input validation untuk pdfData dan trailerUrl
+- [ ] analyze-film.ts main handler dibuat
+- [ ] Container entry point dengan Lambda runtime API
+- [ ] Input validation untuk pdfData dan trailerUrl
+- [ ] API Gateway integration setup
 
 ### 4.2 PDF Processing
 - [x] netlify/utils/pdfProcessor.ts dibuat
@@ -117,11 +122,11 @@
 - [x] downloadAudioFromYouTube function menggunakan yt-dlp-exec
 - [x] cleanupTempFile utility dibuat
 
-### 4.4 AWS Transcribe Integration
-- [x] netlify/utils/transcribeService.ts dibuat
-- [x] transcribeAudio function dengan job polling
-- [x] Error handling dan timeout management
-- [x] Custom vocabulary untuk film terms (optional)
+### 4.4 Gemini Transcription Integration
+- [x] netlify/utils/transcribeService.ts menggunakan Gemini
+- [x] transcribeAudio function dengan multimodal analysis
+- [x] Error handling dan fallback untuk visual analysis
+- [x] Support untuk berbagai audio formats (<20MB)
 
 ### 4.5 AI Analysis Integration
 - [x] netlify/utils/aiAnalyzer.ts dibuat
@@ -139,9 +144,9 @@
 ## 🔄 Integration & Data Flow
 
 ### 5.1 Sequential Processing Pipeline
-- [x] PDF extraction → Audio download → Transcribe → AI Analysis → Audio Generation
-- [x] Proper error handling di setiap step
-- [x] Progress tracking dan status updates
+- [x] PDF extraction → Audio download → Gemini Transcription → AI Analysis → Polly Audio Generation
+- [x] In-memory progress store (tidak persistent across restarts)
+- [x] Proper error handling di setiap step dengan fallback logic
 
 ### 5.2 AI Model Decision Logic
 - [x] Check transcript length (<50 words?)
@@ -164,9 +169,9 @@
 - [ ] Utility function tests
 
 ### 6.2 Integration Testing
-- [ ] Netlify Functions testing dengan mocked AWS services
-- [ ] API endpoint testing
-- [ ] Error scenario testing
+- [ ] AWS Lambda container testing dengan mocked services
+- [ ] API Gateway endpoint testing
+- [ ] Container image build testing
 
 ### 6.3 E2E Testing
 - [ ] Playwright dikonfigurasi
@@ -178,14 +183,15 @@
 
 ## 🚀 Deployment & Production
 
-### 7.1 Netlify Configuration
-- [ ] netlify.toml dengan build settings
-- [ ] Function bundling dengan esbuild
-- [ ] Environment variables di dashboard
-- [ ] Build commands dan publish directory
+### 7.1 AWS Configuration
+- [ ] Dockerfile untuk Lambda container
+- [ ] ECR repository setup
+- [ ] Lambda function creation
+- [ ] API Gateway setup untuk HTTP endpoints
+- [ ] Environment variables di Lambda configuration
 
 ### 7.2 Environment Variables Production
-- [ ] AWS credentials di Netlify dashboard
+- [ ] AWS credentials di Lambda environment
 - [ ] GEMINI_API_KEY securely stored
 - [ ] NODE_ENV=production
 - [ ] Monitoring dan logging variables
@@ -305,13 +311,15 @@
 
 ---
 
-## 💰 Cost Estimation (Monthly)
-- [ ] AWS Bedrock (OpenAI gpt-oss-120b): $0.04-0.08 (for 100-200 analyses)
-- [ ] Google Gemini 2.5 Flash-Lite (transcription): $0.03-0.06 (for 100 transcriptions)
-- [ ] Google Gemini 2.5 Flash-Lite (visual analysis): $0.01-0.02 (fallback only)
-- [ ] AWS Polly (Neural): $0.08-0.16 (for 100 briefings)
-- [ ] **Total**: $0.16-0.32 (within $5 budget for 100 analyses)
+## 💰 Cost Estimation (Monthly) - UPDATED
+- [x] AWS Bedrock (OpenAI gpt-oss-120b): $0.04-0.08 (for 100-200 analyses)
+- [x] Google Gemini 2.5 Flash-Lite (transcription): $0.03-0.06 (for 100 transcriptions)
+- [x] Google Gemini 2.5 Flash-Lite (visual analysis): $0.01-0.02 (fallback only, ~5% usage)
+- [x] AWS Polly (Neural): $0.08-0.16 (for 100 briefings)
+- [x] AWS Lambda (Container): $0.20 per 1M requests + free tier 1M requests
+- [x] **Total**: $0.16-0.32 (within $5 budget for 100 analyses)
+- [x] **Architecture**: Gemini transcription (primary) → OpenAI analysis → Polly audio
 
 ---
 
-*Checklist ini dibuat berdasarkan Sorot.AI Development Rules untuk memastikan semua aspek development tercover secara sistematis.*
+*Checklist ini dibuat berdasarkan Sorot.AI Development Rules untuk migrasi dari Netlify ke AWS Lambda container. Fokus pada cost optimization dan serverless architecture.*

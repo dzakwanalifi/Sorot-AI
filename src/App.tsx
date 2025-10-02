@@ -12,7 +12,7 @@ function App() {
             AI-powered film curation platform for Indonesian film festival selectors
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            Analyze trailers and synopses with dual AI: OpenAI GPT-4 + Google Gemini
+            Analyze trailers and synopses with dual AI: OpenAI GPT OSS-120B + Google Gemini
           </p>
         </header>
 

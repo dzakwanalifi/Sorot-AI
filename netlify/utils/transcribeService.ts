@@ -7,8 +7,20 @@ if (!GEMINI_API_KEY) {
   throw new Error('GEMINI_API_KEY environment variable is required but not set')
 }
 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' })
+console.log('Initializing Gemini client with API key (length:', GEMINI_API_KEY.length + ')')
+
+// Test the API key by making a simple request
+let genAI: GoogleGenerativeAI
+let model: any
+
+try {
+  genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
+  model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' })
+  console.log('Gemini client initialized successfully')
+} catch (initError) {
+  console.error('Failed to initialize Gemini client:', initError)
+  throw new Error(`Invalid GEMINI_API_KEY: ${initError instanceof Error ? initError.message : 'Unknown error'}`)
+}
 
 export async function transcribeAudio(audioFilePath: string): Promise<string> {
   try {
