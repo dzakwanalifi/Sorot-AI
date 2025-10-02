@@ -112,7 +112,7 @@ Return ONLY valid JSON, no additional text.
     console.log('Extracted analysis text:', analysisText.substring(0, 200) + '...')
 
     // Parse the JSON response
-    let analysisResult: any
+    let analysisResult: AIAnalysisResult
     try {
       analysisResult = JSON.parse(analysisText)
     } catch (parseError) {

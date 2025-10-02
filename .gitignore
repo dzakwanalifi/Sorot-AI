@@ -51,6 +51,9 @@ Thumbs.db
 *.temp
 .cache/
 
+# Progress store (runtime data)
+progress-store.json
+
 # AWS credentials (double check)
 .aws/
 

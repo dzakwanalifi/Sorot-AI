@@ -15,19 +15,25 @@ import type { FilmAnalysis } from '@/types/analysis'
 
 // API Response types
 interface AnalysisStartResponse {
-  analysisId: string
-  status: string
-  message: string
+  success: boolean
+  data: {
+    analysisId: string
+    status: string
+    message: string
+  }
 }
 
 interface AnalysisProgressResponse {
-  status: 'processing' | 'completed' | 'failed'
-  currentStep: number
-  totalSteps: number
-  stepName: string
-  progress: number
-  result?: FilmAnalysis
-  error?: string
+  success: boolean
+  data: {
+    status: 'processing' | 'completed' | 'failed'
+    currentStep: number
+    totalSteps: number
+    stepName: string
+    progress: number
+    result?: FilmAnalysis
+    error?: string
+  }
 }
 
 export const FilmAnalysisContainer: React.FC = () => {
@@ -89,16 +95,21 @@ export const FilmAnalysisContainer: React.FC = () => {
         inputType
       })
 
-      if (response.success && response.data?.analysisId) {
-        const analysisId = response.data.analysisId
+      if (response.success && response.data?.data?.analysisId) {
+        const analysisId = response.data.data.analysisId
 
-        // Poll for progress updates
-        const pollInterval = setInterval(async () => {
+        // Smart polling with exponential backoff for better performance
+        let pollCount = 0
+        let pollInterval: NodeJS.Timeout
+        let timeoutId: NodeJS.Timeout
+
+        const smartPolling = async () => {
           try {
             const statusResponse = await apiClient.get<AnalysisProgressResponse>(`/.netlify/functions/analysis-status?id=${analysisId}`)
 
-            if (statusResponse.success && statusResponse.data) {
-              const progress = statusResponse.data
+            if (statusResponse.success && statusResponse.data?.data) {
+              const progress = statusResponse.data.data
+              pollCount++
 
               // Map backend step numbers to frontend stage names
               const stageMapping = {
@@ -120,25 +131,51 @@ export const FilmAnalysisContainer: React.FC = () => {
 
               if (progress.status === 'completed' && progress.result) {
                 clearInterval(pollInterval)
+                clearTimeout(timeoutId)
                 setProgress({ stage: 'complete', percentage: 100 })
                 setCurrentAnalysis(progress.result)
                 setCurrentStep('results')
                 setAnalyzing(false)
+                return // Stop polling
               } else if (progress.status === 'failed') {
                 clearInterval(pollInterval)
+                clearTimeout(timeoutId)
                 setError(progress.error || 'Analysis failed')
                 setAnalyzing(false)
+                return // Stop polling
               }
+
+              // Dynamic polling interval based on progress
+              // Early stages: fast polling (1-2s), later stages: slower polling (3-5s)
+              const baseInterval = progress.currentStep <= 2 ? 1500 : 3000
+              const backoffMultiplier = Math.min(pollCount * 0.1, 2) // Max 2x slowdown
+              const nextInterval = Math.round(baseInterval * (1 + backoffMultiplier))
+
+              // Schedule next poll
+              pollInterval = setTimeout(smartPolling, nextInterval)
+            } else {
+              // Retry with exponential backoff on error
+              const retryDelay = Math.min(1000 * Math.pow(2, pollCount), 10000) // Max 10s
+              pollInterval = setTimeout(smartPolling, retryDelay)
             }
           } catch (pollError) {
             console.error('Error polling status:', pollError)
-            // Continue polling despite errors
-          }
-        }, 2000) // Poll every 2 seconds
+            pollCount++
 
-        // Stop polling after 5 minutes as fallback
+            // Retry with exponential backoff
+            const retryDelay = Math.min(1000 * Math.pow(2, pollCount), 10000) // Max 10s
+            pollInterval = setTimeout(smartPolling, retryDelay)
+          }
+        }
+
+        // Start smart polling with a small delay to allow backend to initialize
         setTimeout(() => {
-          clearInterval(pollInterval)
+          smartPolling()
+        }, 500) // 500ms delay
+
+        // Global timeout after 5 minutes
+        timeoutId = setTimeout(() => {
+          clearTimeout(pollInterval)
           if (isAnalyzing) {
             setError('Analysis timed out. Please try again.')
             setAnalyzing(false)
@@ -146,7 +183,7 @@ export const FilmAnalysisContainer: React.FC = () => {
         }, 300000) // 5 minutes
 
       } else {
-        throw new Error(response.data?.message || response.error || 'Failed to start analysis')
+        throw new Error(response.data?.data?.message || response.error || 'Failed to start analysis')
       }
 
     } catch (err) {
@@ -205,7 +242,7 @@ export const FilmAnalysisContainer: React.FC = () => {
         <CardContent>
           <p className="text-muted-foreground">
             Analyze film trailers and synopses using dual AI capabilities:
-            OpenAI GPT-4 for text analysis and Google Gemini for visual analysis.
+            OpenAI GPT OSS-120B for text analysis and Google Gemini for visual analysis.
           </p>
         </CardContent>
       </Card>
@@ -343,7 +380,7 @@ export const FilmAnalysisContainer: React.FC = () => {
       <Separator />
       <div className="text-center text-sm text-muted-foreground">
         <p>Sorot.AI - AI-powered film curation for festival selectors</p>
-        <p>Powered by OpenAI GPT-4, Google Gemini, and AWS services for comprehensive film analysis.</p>
+        <p>Powered by OpenAI GPT OSS-120B, Google Gemini, and AWS services for comprehensive film analysis.</p>
       </div>
     </div>
   )

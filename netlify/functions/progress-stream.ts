@@ -1,14 +1,17 @@
 import { Handler } from '@netlify/functions'
 import { progressStore } from '../utils/progressStore'
 
-// Status endpoint for checking analysis progress
+// Server-Sent Events for real-time progress updates
+// Note: Netlify Functions have limitations with true streaming,
+// so this implements a hybrid approach with fast reconnects
 export const handler: Handler = async (event) => {
   // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Content-Type': 'application/json'
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache'
   }
 
   // Handle preflight requests
@@ -24,7 +27,7 @@ export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
-      headers,
+      headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Method not allowed' })
     }
   }
@@ -34,37 +37,40 @@ export const handler: Handler = async (event) => {
     if (!analysisId) {
       return {
         statusCode: 400,
-        headers,
+        headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Analysis ID required' })
       }
     }
 
-    // Check the shared progress store
     const progress = progressStore.getProgress(analysisId)
-    console.log(`Checking progress for analysis ${analysisId}:`, progress ? 'found' : 'not found', progress)
     if (!progress) {
       return {
         statusCode: 404,
-        headers,
+        headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Analysis not found' })
       }
     }
 
+    // Format as SSE data with proper SSE format
+    const sseData = [
+      `event: progress`,
+      `id: ${Date.now()}`,
+      `data: ${JSON.stringify(progress)}`,
+      `` // Empty line to end the event
+    ].join('\n')
+
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({
-        success: true,
-        data: progress
-      })
+      body: sseData
     }
 
   } catch (error) {
-    console.error('Error checking analysis status:', error)
+    console.error('Error streaming progress:', error)
 
     return {
       statusCode: 500,
-      headers,
+      headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         error: 'Internal server error',
         details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined

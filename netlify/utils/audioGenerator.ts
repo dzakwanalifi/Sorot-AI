@@ -1,6 +1,7 @@
 import {
   PollyClient,
-  DescribeVoicesCommand
+  DescribeVoicesCommand,
+  SynthesizeSpeechCommand
 } from '@aws-sdk/client-polly'
 import type { AIAnalysisResult } from './aiAnalyzer'
 
@@ -16,15 +17,44 @@ const pollyClient = new PollyClient({
 })
 
 export async function generateAudioBriefing(analysis: AIAnalysisResult): Promise<string> {
-  console.log('Audio briefing generation requested')
+  try {
+    console.log('Audio briefing generation requested')
 
-  // Generate briefing text from analysis
-  const briefingText = generateBriefingText(analysis)
-  console.log(`Generated briefing text: ${briefingText.length} characters`)
+    // Generate briefing text from analysis
+    const briefingText = generateBriefingText(analysis)
+    console.log(`Generated briefing text: ${briefingText.length} characters`)
 
-  // Since we want to avoid S3 for temporary data, we need to implement an alternative approach
-  // For now, we'll throw an error indicating this needs to be implemented differently
-  throw new Error('Audio briefing generation requires S3 for storage. Please implement an alternative approach for temporary audio generation, such as returning audio as base64 data or using a different cloud service that doesn\'t require persistent storage.')
+    // Use Polly to generate speech directly (no S3 storage needed)
+    console.log('Generating speech with AWS Polly...')
+
+    const command = new SynthesizeSpeechCommand({
+      Text: briefingText,
+      OutputFormat: 'mp3',
+      VoiceId: 'Joanna', // Neural voice for better quality
+      Engine: 'neural',
+      TextType: 'text'
+    })
+
+    const response = await pollyClient.send(command)
+
+    if (!response.AudioStream) {
+      throw new Error('No audio stream returned from Polly')
+    }
+
+    // Convert the audio stream to base64
+    const audioBuffer = Buffer.from(await response.AudioStream.transformToByteArray())
+    const audioBase64 = audioBuffer.toString('base64')
+
+    console.log(`Audio briefing generated: ${audioBuffer.length} bytes`)
+
+    // Return base64 encoded audio data
+    return `data:audio/mp3;base64,${audioBase64}`
+
+  } catch (error) {
+    console.error('Audio briefing generation failed:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Audio briefing generation failed: ${errorMessage}`)
+  }
 }
 
 function generateBriefingText(analysis: AIAnalysisResult): string {

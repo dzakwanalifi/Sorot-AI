@@ -107,6 +107,7 @@ export const handler: Handler = async (event) => {
     }
 
     const progress = progressStore.getProgress(analysisId)
+    console.log(`Checking progress for analysis ${analysisId}:`, progress ? 'found' : 'not found')
     if (!progress) {
       return {
         statusCode: 404,
@@ -165,14 +166,14 @@ export const handler: Handler = async (event) => {
     // Generate unique analysis ID
     const analysisId = `analysis-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-    // Initialize progress
+    // Initialize progress immediately
     updateProgress(analysisId, 1, 'Processing PDF', 0)
 
     // Start analysis asynchronously
     processFilmAnalysis(pdfData, trailerUrl, inputType, (step, stepName, progress) => {
       updateProgress(analysisId, step, stepName, progress)
     }).then((result) => {
-      completeProgress(analysisId, result)
+      completeProgress(analysisId, result as unknown as Record<string, unknown>)
     }).catch((error) => {
       console.error('Film analysis failed:', error)
       failProgress(analysisId, (error as Error).message)
