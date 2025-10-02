@@ -12,7 +12,7 @@ Sorot.AI is an AI-powered film curation platform for Indonesian film festival se
 - **Frontend**: React 19.x with Vite 5.x (SWC plugin) + Tailwind CSS 3.4+
 - **UI Components**: shadcn/ui (primary) + custom components for specialized features
 - **State Management**: Zustand 4.x (lightweight alternative to Redux for MVP)
-- **Backend**: Netlify Functions with Node.js 18+/TypeScript
+- **Backend**: AWS Lambda Container with Node.js 18+/TypeScript
 - **AI Model**: OpenAI gpt-oss-120b (via AWS Bedrock) + Gemini 2.5 Flash-Lite (via Google Generative AI)
 - **AWS Services**: Bedrock, Polly (Transcribe tidak digunakan - pakai Gemini)
 - **Google Services**: Gemini 2.5 Flash-Lite via Google Generative AI (transcription + visual analysis)
@@ -175,7 +175,7 @@ aws/
 - Implement retry logic with `maxAttempts` configuration
 - Use async/await with proper error boundaries
 - Handle timeouts and implement cost optimization (cache results, batch requests)
-- Store credentials securely in Netlify environment variables
+- Store credentials securely in AWS Lambda environment variables
 
 ## Development Workflow
 
@@ -257,14 +257,14 @@ aws/
 - **Input Validation**: Zod or Yup schemas for runtime type checking and sanitization
 - **File Upload Security**: Validate file types, sizes, and content; scan for malware
 - **HTTPS Only**: All communications must use HTTPS with proper SSL certificates
-- **CORS Configuration**: Restrict origins in Netlify function responses
-- **Environment Variables**: Never commit secrets; use Netlify environment variables
+- **CORS Configuration**: Restrict origins in AWS Lambda function responses
+- **Environment Variables**: Never commit secrets; use AWS Lambda environment variables
 - **Rate Limiting**: Implement request throttling to prevent abuse
 
 ### AWS & Google Security & Cost Management
 - **IAM Policies**: Least privilege principle with minimal required permissions for Bedrock/Polly
 - **API Key Security**: Store Gemini API key securely in environment variables
-- **Credential Management**: Use IAM roles for Netlify functions, rotate Gemini API key regularly
+- **Credential Management**: Use IAM roles for AWS Lambda functions, rotate Gemini API key regularly
 - **Cost Monitoring**: Set up AWS budgets for Bedrock/Polly + Google billing alerts for Gemini
 - **Resource Optimization**: Implement caching to reduce redundant API calls across both platforms
 - **Multi-Cloud Strategy**: Use Gemini 2.5 Flash-Lite for transcription, OpenAI gpt-oss-120b for analysis, Gemini fallback for visual analysis
