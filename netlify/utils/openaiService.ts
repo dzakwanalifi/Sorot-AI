@@ -8,7 +8,7 @@ const bedrockClient = new BedrockRuntimeClient({
   region: process.env.AWS_REGION || 'us-east-1'
 })
 
-const MODEL_ID = 'openai.gpt-oss-120b-1:0' // OpenAI GPT-4 via Bedrock
+const MODEL_ID = 'openai.gpt-oss-120b-1:0' // OpenAI gpt-oss-120b via AWS Bedrock
 
 export async function analyzeWithOpenAI(
   synopsis: string,
