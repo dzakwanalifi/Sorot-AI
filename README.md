@@ -5,7 +5,7 @@ AI-powered film curation platform for Indonesian film festival selectors.
 ## Overview
 
 Sorot.AI analyzes movie trailers and synopses using dual AI capabilities:
-- **OpenAI gpt-oss-120b** via AWS Bedrock for intelligent text-based analysis
+- **DeepSeek-R1** via AWS Bedrock for intelligent text-based analysis
 - **Gemini 2.5 Flash-Lite** via Google Vertex AI for visual analysis of silent/music-only trailers
 
 This hybrid approach ensures comprehensive film analysis regardless of trailer content.
@@ -15,7 +15,7 @@ This hybrid approach ensures comprehensive film analysis regardless of trailer c
 - **Frontend**: React 19.x + Vite 5.x + TypeScript + Tailwind CSS 3.4+
 - **Backend**: AWS Lambda Container (Node.js 18+)
 - **AI Models**:
-  - OpenAI gpt-oss-120b (AWS Bedrock) - Primary analysis
+  - DeepSeek-R1 (AWS Bedrock) - Primary analysis
   - Gemini 2.5 Flash-Lite (Google Generative AI) - Visual fallback
 - **AWS Services**: Transcribe, Bedrock, Polly
 - **State Management**: Zustand 4.x
@@ -119,7 +119,7 @@ Deploy to AWS Lambda with these build settings:
 
 ## Cost Estimation (Monthly)
 
-- AWS Bedrock (OpenAI gpt-oss-120b): $15-30
+- AWS Bedrock (DeepSeek-R1): $15-30
 - Google Gemini 2.5 Flash-Lite: $5-10
 - AWS Transcribe: $24
 - AWS Polly: $16

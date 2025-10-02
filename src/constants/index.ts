@@ -20,7 +20,7 @@ export const UPLOAD_CONFIG = {
 
 // AI Model Configuration
 export const AI_CONFIG = {
-  OPENAI_MODEL: 'openai.gpt-oss-120b-1:0',
+  DEEPSEEK_MODEL: 'deepseek.r1-v1:0',
   GEMINI_MODEL: 'gemini-2.5-flash-lite',
   TRANSCRIPT_THRESHOLD: 50, // words - below this triggers visual analysis
   MAX_TOKENS: 2000,

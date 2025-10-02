@@ -172,7 +172,7 @@ export class FilmAnalysisPipeline {
         trailerInfo,
         analysisResult.scores!,
         analysisResult.insights!,
-        analysisResult.aiModel as 'openai' | 'gemini'
+        analysisResult.aiModel as 'deepseek' | 'gemini'
       )
 
       // Add processing stats

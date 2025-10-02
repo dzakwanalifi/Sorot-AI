@@ -93,7 +93,7 @@ Key strengths: ${insights.strengths.join('. ')}.
 
 Areas for improvement: ${insights.suggestions.join('. ')}.
 
-This analysis was generated using ${analysis.aiModel === 'deepseek' ? 'DeepSeek-R1' : analysis.aiModel === 'gemini' ? 'Google Gemini' : 'OpenAI GPT OSS-120B'} artificial intelligence.`
+This analysis was generated using ${analysis.aiModel === 'deepseek' ? 'DeepSeek-R1' : 'Google Gemini'} artificial intelligence.`
 
   return text.trim()
 }

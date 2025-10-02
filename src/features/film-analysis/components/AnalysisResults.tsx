@@ -2,7 +2,6 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/shared/components/ui/accordion'
 import { Badge } from '@/shared/components/ui/badge'
-import { Button } from '@/shared/components/ui/button'
 import { Progress } from '@/shared/components/ui/progress'
 import {
   Star,
@@ -18,13 +17,11 @@ import type { FilmAnalysis } from '@/types/analysis'
 
 interface AnalysisResultsProps {
   analysis: FilmAnalysis
-  onPlayAudio?: (url: string) => void
   className?: string
 }
 
 export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   analysis,
-  onPlayAudio,
   className
 }) => {
   // Add safety checks for the analysis data structure
@@ -65,7 +62,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           <CardTitle className="flex items-center justify-between">
             <span>Analysis Results</span>
             <Badge variant="secondary" className="text-lg px-3 py-1">
-              {analysis.aiModel === 'deepseek' ? 'DeepSeek-R1' : analysis.aiModel === 'openai' ? 'OpenAI' : 'Gemini'} Analysis
+              {analysis.aiModel === 'deepseek' ? 'DeepSeek-R1' : 'Gemini'} Analysis
             </Badge>
           </CardTitle>
         </CardHeader>

@@ -103,11 +103,11 @@ Return ONLY valid JSON, no additional text.
 
     const responseBody = JSON.parse(responseText)
 
-    // For OpenAI models in Bedrock, the response format may vary
+    // For DeepSeek-R1 models in Bedrock, the response format may vary
     let analysisText: string
 
     if (responseBody.choices && responseBody.choices[0]) {
-      // Standard OpenAI format
+      // Standard format
       analysisText = responseBody.choices[0].message?.content || responseBody.choices[0].text || ''
     } else if (responseBody.completions && responseBody.completions[0]) {
       // Alternative format

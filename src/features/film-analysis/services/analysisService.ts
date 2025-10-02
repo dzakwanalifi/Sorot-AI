@@ -7,7 +7,7 @@ export interface AnalysisResult {
   success: boolean
   scores?: AnalysisScores
   insights?: AnalysisInsights
-  aiModel?: 'openai' | 'gemini'
+  aiModel?: 'deepseek' | 'gemini'
   error?: string
   metadata?: {
     processingTime: number
@@ -17,16 +17,16 @@ export interface AnalysisResult {
 }
 
 /**
- * Analyze film using OpenAI gpt-oss-120b via AWS Bedrock
+ * Analyze film using DeepSeek-R1 via AWS Bedrock
  */
-export async function analyzeWithOpenAI(
+export async function analyzeWithDeepSeek(
   synopsis: FilmSynopsis,
   transcript: string
 ): Promise<AnalysisResult> {
   const startTime = Date.now()
 
   try {
-    console.log('🤖 Starting OpenAI analysis via Bedrock...')
+    console.log('🤖 Starting DeepSeek-R1 analysis via Bedrock...')
 
     const client = new BedrockRuntimeClient({
       region: process.env.AWS_REGION,
@@ -39,7 +39,7 @@ export async function analyzeWithOpenAI(
     const prompt = createAnalysisPrompt(synopsis, transcript)
 
     const command = new InvokeModelCommand({
-      modelId: AI_CONFIG.OPENAI_MODEL,
+      modelId: AI_CONFIG.DEEPSEEK_MODEL,
       body: JSON.stringify({
         messages: [
           {
@@ -62,7 +62,7 @@ export async function analyzeWithOpenAI(
     const result = JSON.parse(new TextDecoder().decode(response.body))
 
     if (!result.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response from OpenAI model')
+      throw new Error('Invalid response from DeepSeek-R1 model')
     }
 
     const analysisText = result.choices[0].message.content
@@ -70,35 +70,35 @@ export async function analyzeWithOpenAI(
 
     const processingTime = Date.now() - startTime
 
-    console.log('✅ OpenAI analysis completed', {
+    console.log('✅ DeepSeek-R1 analysis completed', {
       processingTime,
-      model: AI_CONFIG.OPENAI_MODEL
+      model: AI_CONFIG.DEEPSEEK_MODEL
     })
 
     return {
       success: true,
       ...analysis,
-      aiModel: 'openai',
+      aiModel: 'deepseek',
       metadata: {
         processingTime,
         tokensUsed: result.usage?.total_tokens,
-        model: AI_CONFIG.OPENAI_MODEL
+        model: AI_CONFIG.DEEPSEEK_MODEL
       }
     }
 
   } catch (error) {
-    console.error('❌ OpenAI analysis failed:', error)
+    console.error('❌ DeepSeek-R1 analysis failed:', error)
 
     const errorMessage = error instanceof Error
       ? error.message
-      : 'Unknown OpenAI analysis error'
+      : 'Unknown DeepSeek-R1 analysis error'
 
     return {
       success: false,
       error: `${ERROR_MESSAGES.ANALYSIS_FAILED}: ${errorMessage}`,
       metadata: {
         processingTime: Date.now() - startTime,
-        model: AI_CONFIG.OPENAI_MODEL
+        model: AI_CONFIG.DEEPSEEK_MODEL
       }
     }
   }
@@ -201,21 +201,21 @@ export async function analyzeFilm(
     return await analyzeWithGemini(synopsis, transcript, trailerUrl)
   }
 
-  // Use OpenAI for text-based analysis (good transcript)
-  console.log('🔄 Using OpenAI for text analysis (good transcript)')
-  const openAIResult = await analyzeWithOpenAI(synopsis, transcript)
+  // Use DeepSeek-R1 for text-based analysis (good transcript)
+  console.log('🔄 Using DeepSeek-R1 for text analysis (good transcript)')
+  const deepseekResult = await analyzeWithDeepSeek(synopsis, transcript)
 
-  // If OpenAI fails, fallback to Gemini
-  if (!openAIResult.success) {
-    console.log('🔄 OpenAI failed, falling back to Gemini...')
+  // If DeepSeek-R1 fails, fallback to Gemini
+  if (!deepseekResult.success) {
+    console.log('🔄 DeepSeek-R1 failed, falling back to Gemini...')
     return await analyzeWithGemini(synopsis, transcript, trailerUrl)
   }
 
-  return openAIResult
+  return deepseekResult
 }
 
 /**
- * Create analysis prompt for OpenAI
+ * Create analysis prompt for DeepSeek-R1
  */
 function createAnalysisPrompt(synopsis: FilmSynopsis, transcript: string): string {
   return `
