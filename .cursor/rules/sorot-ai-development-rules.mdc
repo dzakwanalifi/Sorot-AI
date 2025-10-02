@@ -6,14 +6,14 @@ alwaysApply: true
 # Sorot.AI Development Rules
 
 ## Project Overview
-Sorot.AI is an AI-powered film curation platform for Indonesian film festival selectors. It analyzes movie trailers and synopses using **dual AI capabilities**: **OpenAI's gpt-oss-120b model** via AWS Bedrock for text-based analysis, and **Gemini 2.5 Flash-Lite** via Google Generative AI for visual analysis of silent or music-only trailers. This hybrid approach ensures comprehensive film analysis regardless of trailer content, providing intelligent scoring, summaries, and audio briefings for sophisticated film curation decisions.
+Sorot.AI is an AI-powered film curation platform for Indonesian film festival selectors. It analyzes movie trailers and synopses using **dual AI capabilities**: **DeepSeek-R1** via AWS Bedrock for text-based analysis, and **Gemini 2.5 Flash-Lite** via Google Generative AI for visual analysis of silent or music-only trailers. This hybrid approach ensures comprehensive film analysis regardless of trailer content, providing intelligent scoring, summaries, and audio briefings for sophisticated film curation decisions.
 
 ## Tech Stack Requirements (2024-2025 Latest)
 - **Frontend**: React 19.x with Vite 5.x (SWC plugin) + Tailwind CSS 3.4+
 - **UI Components**: shadcn/ui (primary) + custom components for specialized features
 - **State Management**: Zustand 4.x (lightweight alternative to Redux for MVP)
 - **Backend**: AWS Lambda Container with Node.js 18+/TypeScript
-- **AI Model**: OpenAI gpt-oss-120b (via AWS Bedrock) + Gemini 2.5 Flash-Lite (via Google Generative AI)
+- **AI Model**: DeepSeek-R1 (via AWS Bedrock) + Gemini 2.5 Flash-Lite (via Google Generative AI)
 - **AWS Services**: Bedrock, Polly (Transcribe tidak digunakan - pakai Gemini)
 - **Google Services**: Gemini 2.5 Flash-Lite via Google Generative AI (transcription + visual analysis)
 - **AWS SDK**: v3 modular packages (tree-shakable imports)
@@ -24,7 +24,7 @@ Sorot.AI is an AI-powered film curation platform for Indonesian film festival se
 ## AI Model Requirements (MANDATORY)
 
 ### Primary Text Analysis Model
-- **Model**: OpenAI gpt-oss-120b (`openai.gpt-oss-120b-1:0`)
+- **Model**: DeepSeek-R1 (`deepseek.r1-v1:0`)
 - **Platform**: AWS Bedrock (serverless deployment)
 - **Pricing**: Input $0.00015/1K tokens, Output $0.0006/1K tokens
 - **Key Capabilities**: Hybrid reasoning, extended thinking, efficient code generation, agentic search, tool use
@@ -132,7 +132,7 @@ aws/
 
 ### Service Usage
 - **Google Gemini 2.5 Flash-Lite**: Convert trailer audio to text transcript (primary transcription, <20MB)
-- **AWS Bedrock**: Analyze combined synopsis + transcript data (use OpenAI gpt-oss-120b model)
+- **AWS Bedrock**: Analyze combined synopsis + transcript data (use DeepSeek-R1 model)
 - **Google Gemini 2.5 Flash-Lite**: Visual analysis fallback when transcription <50 words
 - **AWS Polly**: Generate audio briefings from analysis results (Neural voice, base64 response)
 
@@ -147,13 +147,13 @@ aws/
 2. Download/process trailer audio using **yt-dlp-exec** (YouTube support)
 3. Submit audio to **Google Gemini 2.5 Flash-Lite** for transcription (<20MB inline)
 4. **Decision Point**: Check transcript length (<50 words?)
-   - **If good transcript**: Send transcript + synopsis to Bedrock (OpenAI gpt-oss-120b model)
+   - **If good transcript**: Send transcript + synopsis to Bedrock (DeepSeek-R1 model)
    - **If poor transcript**: Send video URL to Gemini 2.5 Flash-Lite for visual analysis
 5. Convert analysis results to audio via AWS Polly (base64 response, no S3)
 6. Return comprehensive JSON response with in-memory progress tracking
 
-### AI Model Configuration (OpenAI gpt-oss-120b)
-- **Model ID**: `openai.gpt-oss-120b-1:0`
+### AI Model Configuration (DeepSeek-R1)
+- **Model ID**: `deepseek.r1-v1:0`
 - **Max Tokens**: 128K (sangat cocok untuk analisis film yang detail)
 - **Deployment**: Serverless via AWS Bedrock
 - **Best for**: Coding, scientific analysis, mathematical reasoning, complex problem-solving
@@ -190,7 +190,7 @@ aws/
 
 ### Backend Development (AWS Lambda Container)
 - **Container Runtime**: Node.js 18+ with Lambda runtime API
-- **AI Integration**: OpenAI gpt-oss-120b via Bedrock + Gemini 2.5 Flash-Lite for transcription & visual analysis
+- **AI Integration**: DeepSeek-R1 via Bedrock + Gemini 2.5 Flash-Lite for transcription & visual analysis
 - **AWS SDK**: v3 modular imports with Polly synthesis (no Transcribe)
 - **Google SDK**: @google/genai for multimodal transcription and visual analysis
 - **Progress Tracking**: In-memory store (container restarts reset progress)
@@ -200,7 +200,7 @@ aws/
 - **Security**: Input validation, environment variable validation, CORS configuration
 - **Error Handling**: Fallback logic (transcription → visual analysis → error)
 
-### OpenAI gpt-oss-120b Implementation Guidelines
+### DeepSeek-R1 Implementation Guidelines
 - **Model Strengths**: Excel in coding, scientific analysis, mathematical reasoning, complex problem-solving
 - **Prompt Engineering**: Craft detailed prompts for film analysis (genre classification, emotional tone, themes, target audience)
 - **Token Management**: Use 128K context window efficiently, set appropriate max_tokens for responses
@@ -267,7 +267,7 @@ aws/
 - **Credential Management**: Use IAM roles for AWS Lambda functions, rotate Gemini API key regularly
 - **Cost Monitoring**: Set up AWS budgets for Bedrock/Polly + Google billing alerts for Gemini
 - **Resource Optimization**: Implement caching to reduce redundant API calls across both platforms
-- **Multi-Cloud Strategy**: Use Gemini 2.5 Flash-Lite for transcription, OpenAI gpt-oss-120b for analysis, Gemini fallback for visual analysis
+- **Multi-Cloud Strategy**: Use Gemini 2.5 Flash-Lite for transcription, DeepSeek-R1 for analysis, Gemini fallback for visual analysis
 - **Data Privacy**: Handle user data securely, implement data retention policies for both platforms
 
 ## Deployment & Environment
@@ -286,7 +286,7 @@ aws/
 - **Performance Monitoring**: Track API response times and function execution duration
 - **AWS Monitoring**: CloudWatch dashboards for Bedrock/Polly usage and costs
 - **Google Monitoring**: Gemini API usage tracking via Google AI Studio (transcription + visual analysis)
-- **Multi-Cloud Analytics**: Track AI model usage (Gemini transcription, OpenAI analysis, Gemini visual fallback ~5%)
+- **Multi-Cloud Analytics**: Track AI model usage (Gemini transcription, DeepSeek-R1 analysis, Gemini visual fallback ~5%)
 - **Progress Tracking**: In-memory status (container restarts reset progress)
 - **Error Tracking**: Comprehensive error handling with CloudWatch alarms
 - **Cost Analytics**: Monitor actual usage vs $5 budget (target: $0.16-0.32 per 100 analyses)
@@ -310,7 +310,7 @@ aws/
 
 ### Multi-Cloud Architecture
 - **Transcription**: Gemini 2.5 Flash-Lite (primary, <20MB audio files)
-- **Analysis**: OpenAI gpt-oss-120b via AWS Bedrock (for good transcripts >50 words)
+- **Analysis**: DeepSeek-R1 via AWS Bedrock (for good transcripts >50 words)
 - **Visual Fallback**: Gemini 2.5 Flash-Lite (when transcription fails or <50 words)
 - **Audio Generation**: AWS Polly (Neural voice, base64 response)
 - **Decision Logic**: Transcript length check (<50 words → visual analysis)

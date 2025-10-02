@@ -46,7 +46,7 @@ export interface FilmAnalysis {
   scores: AnalysisScores
   insights: AnalysisInsights
   audioBriefing?: AudioBriefing
-  aiModel: 'openai' | 'gemini'
+  aiModel: 'deepseek' | 'gemini'
   processingStats: {
     transcriptionTime: number
     analysisTime: number
@@ -88,7 +88,7 @@ export const createFilmAnalysis = (
   trailer: TrailerInfo,
   scores: AnalysisScores,
   insights: AnalysisInsights,
-  aiModel: 'openai' | 'gemini'
+  aiModel: 'deepseek' | 'gemini'
 ): FilmAnalysis => {
   const now = new Date()
   const id = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`

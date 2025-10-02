@@ -157,7 +157,7 @@ export function createBriefingText(
 
     Key Strengths: ${strengths.slice(0, 2).join(', ')}
 
-    Analysis performed using ${aiModel === 'openai' ? 'OpenAI GPT model' : 'Google Gemini model'}.
+    Analysis performed using ${aiModel === 'deepseek' ? 'DeepSeek-R1 model' : 'Google Gemini model'}.
 
     This concludes the automated film analysis briefing.
   `.trim().replace(/\n{3,}/g, '\n\n')

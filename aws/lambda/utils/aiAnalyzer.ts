@@ -1,4 +1,4 @@
-import { analyzeWithDeepSeek } from './openaiService.js'
+import { analyzeWithDeepSeek } from './deepseekService.js'
 import { analyzeWithGeminiVisual } from './geminiService.js'
 import type { FilmAnalysis } from '../types/analysis.js'
 

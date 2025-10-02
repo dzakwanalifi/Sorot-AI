@@ -293,22 +293,22 @@ export const FilmAnalysisContainer: React.FC = () => {
                 (currentStep === 'upload' || currentStep === 'url') && step.key === 'input' ? 'bg-primary text-primary-foreground shadow-md' :
                 (['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) && step.key === 'process') ? 'bg-blue-100 text-blue-800 border border-blue-200' :
                 (currentStep === 'results' && step.key === 'output') ? 'bg-green-100 text-green-800 border border-green-200' :
-                index < [
+                index < (
                   currentStep === 'upload' || currentStep === 'url' ? 0 :
                   ['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) ? 1 :
                   currentStep === 'results' ? 2 : -1
-                ] ? 'bg-green-100 text-green-800 border border-green-200' :
+                ) ? 'bg-green-100 text-green-800 border border-green-200' :
                 'bg-muted text-muted-foreground'
               }`}>
                 <step.icon className="h-4 w-4" />
                 <span className="text-sm font-medium">{step.title}</span>
               </div>
               {index < 2 && <div className={`w-8 h-px transition-colors duration-300 ${
-                index < [
+                index < (
                   currentStep === 'upload' || currentStep === 'url' ? 0 :
                   ['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) ? 1 :
                   currentStep === 'results' ? 2 : -1
-                ] ? 'bg-green-400' :
+                ) ? 'bg-green-400' :
                 'bg-border'
               }`} />}
             </React.Fragment>
@@ -420,11 +420,6 @@ export const FilmAnalysisContainer: React.FC = () => {
 
             <AnalysisResults
               analysis={currentAnalysis}
-              onPlayAudio={(url) => {
-                // Mock audio play
-                console.log('Playing audio:', url)
-                alert('Audio playback would start here in production')
-              }}
             />
           </div>
         )}

@@ -70,7 +70,7 @@ export function generateAnalysisSummary(scores: AnalysisScores, aiModel: string)
   const overall = calculateOverallScore(scores)
   const category = getScoreCategory(overall)
 
-  return `This film receives an overall score of ${overall}/100 (${category.label.toLowerCase()}), analyzed using ${aiModel === 'openai' ? 'OpenAI GPT' : 'Google Gemini'} technology.`
+  return `This film receives an overall score of ${overall}/100 (${category.label.toLowerCase()}), analyzed using ${aiModel === 'deepseek' ? 'DeepSeek-R1' : 'Google Gemini'} technology.`
 }
 
 /**
