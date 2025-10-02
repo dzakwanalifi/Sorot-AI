@@ -66,6 +66,7 @@
   - [x] AWS_ACCESS_KEY_ID
   - [x] AWS_SECRET_ACCESS_KEY
   - [x] AWS_REGION=us-east-1
+- [x] USE_REAL_APIS flag untuk cost control
 
 ---
 
