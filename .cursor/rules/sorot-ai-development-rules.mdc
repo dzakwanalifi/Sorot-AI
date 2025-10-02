@@ -26,21 +26,26 @@ Sorot.AI is an AI-powered film curation platform for Indonesian film festival se
 ### Primary Text Analysis Model
 - **Model**: OpenAI gpt-oss-120b (`openai.gpt-oss-120b-1:0`)
 - **Platform**: AWS Bedrock (serverless deployment)
+- **Pricing**: Input $0.00015/1K tokens, Output $0.0006/1K tokens
 - **Key Capabilities**: Hybrid reasoning, extended thinking, efficient code generation, agentic search, tool use
 - **Use Cases**: Intelligent automation, software development, complex problem-solving, scientific analysis, research applications
 - **Context Window**: 128K tokens (ideal for detailed film analysis with full transcripts)
 - **Performance Focus**: Coding tasks, mathematical reasoning, analytical challenges, multi-step problem solving
 - **Cost Control**: Set max_tokens 1000-2000 per analysis, implement caching for repeated inputs
+- **Cost per Analysis**: ~$0.00045 (1K input + 500 output tokens)
 
-### Visual Analysis Model (Fallback for Silent/Music-Only Content)
+### Audio Transcription & Visual Analysis Model
 - **Model**: Gemini 2.5 Flash-Lite (`gemini-2.5-flash-lite`)
 - **Platform**: Google Generative AI (via @google/genai SDK)
-- **Key Capabilities**: Multimodal analysis (text, image, video), structured output, advanced reasoning
-- **Input Support**: Text, Images, Video (<20MB inline, >20MB via file upload)
+- **Pricing**: Input $0.10/1M tokens, Output $0.40/1M tokens
+- **Key Capabilities**: Multimodal analysis (text, image, video, audio), structured output, advanced reasoning, audio transcription
+- **Input Support**: Text, Images, Video, Audio (<20MB inline, >20MB via file upload)
+- **Audio Support**: WAV, MP3, AIFF, AAC, OGG, FLAC (up to 9.5 hours)
 - **Context Window**: 1M tokens (extremely large for comprehensive analysis)
-- **Performance Focus**: Low-latency visual analysis, emotion detection from imagery, storytelling interpretation
-- **Cost Control**: Default token limits, efficient for visual-only analysis
-- **Fallback Use Case**: When transcript analysis is insufficient (<50 words) or trailer is music-only
+- **Performance Focus**: Audio transcription, visual analysis, emotion detection, storytelling interpretation
+- **Cost Control**: Default token limits, efficient for audio/video analysis
+- **Primary Use**: Audio transcription from video trailers
+- **Fallback Use**: Visual analysis when audio transcription fails
 
 ## Code Structure & Architecture
 
@@ -123,9 +128,9 @@ netlify/
 ## AWS Integration Patterns
 
 ### Service Usage
-- **AWS Transcribe**: Convert trailer audio to text transcript (use job polling for async processing)
+- **Google Gemini 2.5 Flash-Lite**: Convert trailer audio to text transcript (primary transcription)
 - **AWS Bedrock**: Analyze combined synopsis + transcript data (use OpenAI gpt-oss-120b model)
-- **Google Generative AI**: Visual analysis fallback for silent/music-only trailers (use Gemini 2.5 Flash-Lite)
+- **Google Gemini 2.5 Flash-Lite**: Visual analysis fallback for silent/music-only trailers
 - **AWS Polly**: Generate audio briefings from analysis results (stream audio responses)
 
 ### API Design
@@ -137,11 +142,11 @@ netlify/
 ### Data Flow
 1. Extract text from PDF using **unpdf** (modern alternative to pdf-parse)
 2. Download/process trailer audio using **yt-dlp-exec** or **ytdl-core**
-3. Submit to Transcribe → poll for completion status
-4. **Decision Point**: Check transcript length (<50 words?)
-   - **If sufficient transcript**: Send transcript + synopsis to Bedrock (OpenAI gpt-oss-120b model)
-   - **If insufficient transcript**: Send video/image to Google Generative AI (Gemini 2.5 Flash-Lite for visual analysis)
-5. Convert analysis results to audio via Polly (stream response)
+3. Submit audio to **Google Gemini 2.5 Flash-Lite** for transcription
+4. **Decision Point**: Check transcript quality
+   - **If good transcript**: Send transcript + synopsis to Bedrock (OpenAI gpt-oss-120b model)
+   - **If poor transcript**: Send video to Gemini 2.5 Flash-Lite for visual analysis
+5. Convert analysis results to audio via AWS Polly (stream response)
 6. Return comprehensive JSON response with error handling
 
 ### AI Model Configuration (OpenAI gpt-oss-120b)
@@ -163,7 +168,7 @@ netlify/
 - **Cost Optimization**: Use default token limits, efficient for visual-only analysis
 
 ### AWS SDK v3 Best Practices
-- Use modular imports: `import { TranscribeClient, BedrockRuntimeClient } from "@aws-sdk/client-transcribe"`
+- Use modular imports: `import { BedrockRuntimeClient, PollyClient } from "@aws-sdk/client-bedrock-runtime"`
 - Implement retry logic with `maxAttempts` configuration
 - Use async/await with proper error boundaries
 - Handle timeouts and implement cost optimization (cache results, batch requests)
@@ -255,12 +260,12 @@ netlify/
 - **Rate Limiting**: Implement request throttling to prevent abuse
 
 ### AWS & Google Security & Cost Management
-- **IAM Policies**: Least privilege principle with minimal required permissions for AWS services
+- **IAM Policies**: Least privilege principle with minimal required permissions for Bedrock/Polly
 - **API Key Security**: Store Gemini API key securely in environment variables
 - **Credential Management**: Use IAM roles for Netlify functions, rotate Gemini API key regularly
-- **Cost Monitoring**: Set up AWS budgets for Transcribe/Bedrock/Polly + Google billing alerts for Gemini
+- **Cost Monitoring**: Set up AWS budgets for Bedrock/Polly + Google billing alerts for Gemini
 - **Resource Optimization**: Implement caching to reduce redundant API calls across both platforms
-- **Multi-Cloud Strategy**: Use OpenAI gpt-oss-120b as primary, Gemini 2.5 Flash-Lite as fallback only
+- **Multi-Cloud Strategy**: Use Gemini 2.5 Flash-Lite for transcription, OpenAI gpt-oss-120b for analysis, Gemini fallback for visual analysis
 - **Data Privacy**: Handle user data securely, implement data retention policies for both platforms
 
 ## Deployment & Environment
@@ -276,11 +281,11 @@ netlify/
 ### Monitoring & Observability
 - **Logging**: Structured logging with correlation IDs for request tracing
 - **Performance Monitoring**: Track API response times and function execution duration
-- **AWS Monitoring**: CloudWatch dashboards for service usage and costs
+- **AWS Monitoring**: CloudWatch dashboards for Bedrock/Polly usage and costs
 - **Google Monitoring**: Gemini API usage and cost tracking via Google AI Studio dashboard
-- **Multi-Cloud Analytics**: Track which AI model was used (OpenAI primary vs Gemini fallback)
+- **Multi-Cloud Analytics**: Track AI model usage (Gemini transcription, OpenAI analysis, Gemini visual fallback)
 - **Error Tracking**: Sentry or similar for client-side and server-side error tracking
-- **Analytics**: Basic usage analytics for user flow optimization, including visual analysis usage rates
+- **Analytics**: Basic usage analytics for user flow optimization, including transcription success rates
 
 ## File Organization Rules
 

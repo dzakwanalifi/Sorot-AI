@@ -306,11 +306,11 @@
 ---
 
 ## 💰 Cost Estimation (Monthly)
-- [ ] AWS Bedrock (OpenAI gpt-oss-120b): $15-30
-- [ ] Google Gemini 2.5 Flash-Lite: $5-10
-- [ ] AWS Transcribe: $24
-- [ ] AWS Polly: $16
-- [ ] **Total**: $60-80
+- [ ] AWS Bedrock (OpenAI gpt-oss-120b): $0.04-0.08 (for 100-200 analyses)
+- [ ] Google Gemini 2.5 Flash-Lite (transcription): $0.03-0.06 (for 100 transcriptions)
+- [ ] Google Gemini 2.5 Flash-Lite (visual analysis): $0.01-0.02 (fallback only)
+- [ ] AWS Polly (Neural): $0.08-0.16 (for 100 briefings)
+- [ ] **Total**: $0.16-0.32 (within $5 budget for 100 analyses)
 
 ---
 
