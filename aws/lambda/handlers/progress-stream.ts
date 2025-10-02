@@ -1,10 +1,44 @@
-import { Handler } from '@netlify/functions'
+// AWS Lambda types
+interface APIGatewayProxyEvent {
+  httpMethod: string
+  path: string
+  queryStringParameters?: Record<string, string>
+  headers?: Record<string, string>
+  body?: string | null
+  requestContext: {
+    requestId: string
+  }
+}
+
+interface APIGatewayProxyResult {
+  statusCode: number
+  headers?: Record<string, string>
+  body?: string
+}
+
+interface Context {
+  callbackWaitsForEmptyEventLoop: boolean
+  functionName: string
+  functionVersion: string
+  invokedFunctionArn: string
+  memoryLimitInMB: string
+  awsRequestId: string
+  logGroupName: string
+  logStreamName: string
+  identity?: unknown
+  clientContext?: unknown
+  getRemainingTimeInMillis: () => number
+  done: () => void
+  fail: () => void
+  succeed: () => void
+}
+
 import { progressStore } from '../utils/progressStore.js'
 
 // Server-Sent Events for real-time progress updates
-// Note: Netlify Functions have limitations with true streaming,
+// Note: AWS Lambda has limitations with true streaming,
 // so this implements a hybrid approach with fast reconnects
-export const handler: Handler = async (event) => {
+export const handler = async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
   // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',

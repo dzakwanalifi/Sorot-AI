@@ -65,9 +65,11 @@ src/
 ├── constants/       # App constants
 └── styles/          # Global styles
 
-netlify/
-├── functions/       # Serverless functions
-└── utils/          # Backend utilities
+aws/
+├── lambda/          # AWS Lambda container
+│   ├── handlers/    # Lambda handlers
+│   ├── utils/       # Backend utilities
+│   └── types/       # Type definitions
 ```
 
 ## Development

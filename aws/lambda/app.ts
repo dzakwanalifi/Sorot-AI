@@ -2,8 +2,8 @@ import { createServer, IncomingMessage, ServerResponse } from 'http'
 import { handler as analyzeHandler } from './handlers/analyze-film.js'
 import { handler as statusHandler } from './handlers/analysis-status.js'
 
-// AWS Lambda event interface
-interface LambdaEvent {
+// AWS Lambda types
+interface APIGatewayProxyEvent {
   httpMethod: string
   path: string
   queryStringParameters?: Record<string, string>
@@ -12,6 +12,29 @@ interface LambdaEvent {
   requestContext: {
     requestId: string
   }
+}
+
+interface APIGatewayProxyResult {
+  statusCode: number
+  headers?: Record<string, string>
+  body?: string
+}
+
+interface Context {
+  callbackWaitsForEmptyEventLoop: boolean
+  functionName: string
+  functionVersion: string
+  invokedFunctionArn: string
+  memoryLimitInMB: string
+  awsRequestId: string
+  logGroupName: string
+  logStreamName: string
+  identity?: any
+  clientContext?: any
+  getRemainingTimeInMillis: () => number
+  done: () => void
+  fail: () => void
+  succeed: () => void
 }
 
 // AWS Lambda Runtime API server
@@ -27,25 +50,48 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
       body += chunk
     }
 
-    // Create Lambda event object
-    const event = {
+    // Create AWS Lambda API Gateway event object
+    const event: APIGatewayProxyEvent = {
       httpMethod: method,
       path: url.pathname,
       queryStringParameters: Object.fromEntries(url.searchParams),
-      headers: req.headers,
+      headers: Object.fromEntries(
+        Object.entries(req.headers).map(([key, value]) => [
+          key,
+          Array.isArray(value) ? value.join(', ') : String(value || '')
+        ])
+      ),
       body: body || null,
       requestContext: {
         requestId: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       }
     }
 
-    let result: any
+    // Create AWS Lambda context
+    const context: Context = {
+      callbackWaitsForEmptyEventLoop: false,
+      functionName: 'sorot-ai-lambda',
+      functionVersion: '1.0.0',
+      invokedFunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:sorot-ai-lambda',
+      memoryLimitInMB: '1024',
+      awsRequestId: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      logGroupName: '/aws/lambda/sorot-ai-lambda',
+      logStreamName: '2024/01/01/[$LATEST]abcd1234567890',
+      identity: undefined,
+      clientContext: undefined,
+      getRemainingTimeInMillis: () => 300000,
+      done: () => {},
+      fail: () => {},
+      succeed: () => {}
+    }
+
+    let result: APIGatewayProxyResult | void
 
     // Route requests
     if (url.pathname === '/analyze' && method === 'POST') {
-      result = await analyzeHandler(event as any, {} as any)
+      result = await analyzeHandler(event, context)
     } else if (url.pathname === '/status' && method === 'GET') {
-      result = await statusHandler(event as any, {} as any)
+      result = await statusHandler(event, context)
     } else {
       result = {
         statusCode: 404,
@@ -55,12 +101,12 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     }
 
     // Send response
-    if (result && typeof result === 'object') {
+    if (result && typeof result === 'object' && 'statusCode' in result) {
       res.statusCode = result.statusCode || 200
 
       if (result.headers) {
         Object.entries(result.headers).forEach(([key, value]) => {
-          res.setHeader(key, value as string)
+          res.setHeader(key, String(value))
         })
       }
 
