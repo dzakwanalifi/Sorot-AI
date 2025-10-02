@@ -102,36 +102,36 @@
 ## 🔧 Backend Development (Netlify Functions)
 
 ### 4.1 Core Functions
-- [ ] analyze-film.ts main function dibuat
-- [ ] CORS headers dan error handling diimplementasi
-- [ ] Input validation untuk pdfData dan trailerUrl
+- [x] analyze-film.ts main function dibuat
+- [x] CORS headers dan error handling diimplementasi
+- [x] Input validation untuk pdfData dan trailerUrl
 
 ### 4.2 PDF Processing
-- [ ] netlify/utils/pdfProcessor.ts dibuat
-- [ ] extractTextFromPDF function menggunakan unpdf
-- [ ] Error handling untuk invalid PDF files
+- [x] netlify/utils/pdfProcessor.ts dibuat
+- [x] extractTextFromPDF function menggunakan unpdf
+- [x] Error handling untuk invalid PDF files
 
 ### 4.3 Video/Audio Processing
-- [ ] netlify/utils/videoDownloader.ts dibuat
-- [ ] downloadAudioFromYouTube function menggunakan yt-dlp-exec
-- [ ] cleanupTempFile utility dibuat
+- [x] netlify/utils/videoDownloader.ts dibuat
+- [x] downloadAudioFromYouTube function menggunakan yt-dlp-exec
+- [x] cleanupTempFile utility dibuat
 
 ### 4.4 AWS Transcribe Integration
-- [ ] netlify/utils/transcribeService.ts dibuat
-- [ ] transcribeAudio function dengan job polling
-- [ ] Error handling dan timeout management
-- [ ] Custom vocabulary untuk film terms (optional)
+- [x] netlify/utils/transcribeService.ts dibuat
+- [x] transcribeAudio function dengan job polling
+- [x] Error handling dan timeout management
+- [x] Custom vocabulary untuk film terms (optional)
 
 ### 4.5 AI Analysis Integration
-- [ ] netlify/utils/aiAnalyzer.ts dibuat
-- [ ] analyzeWithOpenAI function untuk Bedrock integration
-- [ ] analyzeWithGemini function untuk visual analysis
-- [ ] Decision logic: transcript <50 words → Gemini fallback
+- [x] netlify/utils/aiAnalyzer.ts dibuat
+- [x] analyzeWithOpenAI function untuk Bedrock integration
+- [x] analyzeWithGemini function untuk visual analysis
+- [x] Decision logic: transcript <50 words → Gemini fallback
 
 ### 4.6 Audio Generation
-- [ ] netlify/utils/audioGenerator.ts dibuat
-- [ ] generateAudioBriefing function menggunakan Polly
-- [ ] SSML support untuk enhanced speech (optional)
+- [x] netlify/utils/audioGenerator.ts dibuat
+- [x] generateAudioBriefing function menggunakan Polly
+- [x] SSML support untuk enhanced speech (optional)
 
 ---
 

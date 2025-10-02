@@ -154,7 +154,7 @@ export const FileUploadArea: React.FC<FileUploadAreaProps> = ({
                 <Textarea
                   placeholder="Paste your film synopsis here... (minimum 100 characters)"
                   value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTextInput(e.target.value)}
                   className="min-h-[120px] resize-none"
                 />
                 <div className="flex items-center justify-between">
