@@ -5,7 +5,7 @@ import { Label } from '@/shared/components/ui/label'
 import { Play, Check, AlertCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface TrailerUrlInputProps {  z
+interface TrailerUrlInputProps {
   onUrlSubmit: (url: string) => void
   className?: string
 }
