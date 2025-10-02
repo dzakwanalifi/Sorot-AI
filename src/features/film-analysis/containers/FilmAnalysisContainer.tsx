@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
 import { Separator } from '@/shared/components/ui/separator'
-import { Upload, Brain, CheckCircle, X } from 'lucide-react'
+import { Upload, Brain, CheckCircle, X, FileText, Volume2, Eye } from 'lucide-react'
 import { useAnalysisStore } from '@/lib/store'
 import { apiClient } from '../../../shared/services'
 import { fileToBase64 } from '../../../shared/utils'
@@ -256,93 +256,305 @@ export const FilmAnalysisContainer: React.FC = () => {
     setError(null)
   }
 
+  // Enhanced Error Handling Functions
+  const getErrorMessage = (error: string | null): string => {
+    if (!error) return 'An unexpected error occurred'
+
+    const errorLower = error.toLowerCase()
+
+    if (errorLower.includes('network') || errorLower.includes('fetch')) {
+      return 'Network connection failed. Please check your internet connection and try again.'
+    }
+
+    if (errorLower.includes('timeout')) {
+      return 'The analysis is taking longer than expected. This might be due to high server load.'
+    }
+
+    if (errorLower.includes('pdf') || errorLower.includes('file')) {
+      return 'There was an issue processing your PDF file. Please ensure it\'s a valid PDF and try again.'
+    }
+
+    if (errorLower.includes('video') || errorLower.includes('trailer') || errorLower.includes('youtube')) {
+      return 'Unable to process the trailer video. Please check the URL and ensure the video is accessible.'
+    }
+
+    if (errorLower.includes('quota') || errorLower.includes('limit')) {
+      return 'Service quota exceeded. Please try again in a few minutes.'
+    }
+
+    if (errorLower.includes('unauthorized') || errorLower.includes('auth')) {
+      return 'Authentication failed. Please refresh the page and try again.'
+    }
+
+    if (errorLower.includes('server') || errorLower.includes('internal')) {
+      return 'Server error occurred. Our team has been notified and is working on a fix.'
+    }
+
+    return error // Return original error if no specific match
+  }
+
+  const canRetry = (error: string | null): boolean => {
+    if (!error) return false
+
+    const errorLower = error.toLowerCase()
+    const retryableErrors = [
+      'network', 'timeout', 'fetch', 'connection',
+      'server', 'internal', 'quota', 'limit',
+      'pdf', 'file', 'video', 'trailer', 'youtube'
+    ]
+
+    return retryableErrors.some(keyword => errorLower.includes(keyword))
+  }
+
+  const handleRetry = () => {
+    setError(null)
+    if (currentStep === 'url' && trailerUrl) {
+      handleUrlSubmit(trailerUrl)
+    } else {
+      setCurrentStep('upload')
+    }
+  }
+
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Brain className="h-6 w-6 text-primary" />
-              <span>Sorot.AI Film Analysis</span>
-            </div>
-            <Badge variant="default" className="text-sm bg-green-600">
-              Production Ready
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Analyze film trailers and synopses using dual AI capabilities:
-            DeepSeek-R1 for comprehensive analysis and Google Gemini for visual analysis.
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Sidebar - Desktop Only */}
+      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:border-r lg:bg-muted/20">
+        <div className="p-6 border-b">
+          <div className="flex items-center space-x-3 mb-4">
+            <Brain className="h-6 w-6 text-primary" />
+            <span className="text-xl font-semibold">Sorot.AI</span>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            AI-powered film curation platform for Indonesian film festival selectors
           </p>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Progress Steps */}
-      <div className="flex justify-center">
-        <div className="flex items-center space-x-2 flex-wrap justify-center gap-2">
-          {[
-            { key: 'input', title: 'Input Data', icon: Upload },
-            { key: 'process', title: 'AI Analysis', icon: Brain },
-            { key: 'output', title: 'Hasil Analisis', icon: CheckCircle }
-          ].map((step, index) => (
-            <React.Fragment key={step.key}>
-              <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-                (currentStep === 'upload' || currentStep === 'url') && step.key === 'input' ? 'bg-primary text-primary-foreground shadow-md' :
-                (['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) && step.key === 'process') ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                (currentStep === 'results' && step.key === 'output') ? 'bg-green-100 text-green-800 border border-green-200' :
-                index < (
-                  currentStep === 'upload' || currentStep === 'url' ? 0 :
-                  ['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) ? 1 :
-                  currentStep === 'results' ? 2 : -1
-                ) ? 'bg-green-100 text-green-800 border border-green-200' :
-                'bg-muted text-muted-foreground'
-              }`}>
-                <step.icon className="h-4 w-4" />
-                <span className="text-sm font-medium">{step.title}</span>
+        {/* Progress Sidebar */}
+        <div className="flex-1 p-6">
+          <div className="space-y-4">
+            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+              Analysis Progress
+            </h3>
+
+            {/* Progress Steps for Sidebar - Following Backend Progress */}
+            <div className="space-y-2">
+              {[
+                {
+                  key: 'input',
+                  title: 'Input Data',
+                  icon: Upload,
+                  current: currentStep === 'upload' || currentStep === 'url',
+                  completed: progress ? progress.currentStep > 1 : false
+                },
+                {
+                  key: 'extract',
+                  title: 'Processing PDF',
+                  icon: FileText,
+                  current: currentStep === 'extract',
+                  completed: progress ? progress.currentStep > 2 : false
+                },
+                {
+                  key: 'visual',
+                  title: 'Visual Analysis',
+                  icon: Eye,
+                  current: currentStep === 'visual',
+                  completed: progress ? progress.currentStep > 3 : false
+                },
+                {
+                  key: 'audio',
+                  title: 'Audio Processing',
+                  icon: Volume2,
+                  current: currentStep === 'audio',
+                  completed: progress ? progress.currentStep > 4 : false
+                },
+                {
+                  key: 'analyze',
+                  title: 'AI Analysis',
+                  icon: Brain,
+                  current: currentStep === 'analyze',
+                  completed: progress ? progress.currentStep > 5 : false
+                },
+                {
+                  key: 'generate',
+                  title: 'Audio Briefing',
+                  icon: Volume2,
+                  current: currentStep === 'generate',
+                  completed: currentStep === 'results'
+                }
+              ].map((step, index) => {
+                const isActive = step.current && isAnalyzing
+                const isCompleted = step.completed || (currentStep === 'results' && index < 5)
+
+                return (
+                  <div
+                    key={step.key}
+                    className={`flex items-center space-x-3 p-2 rounded-lg transition-all duration-300 ${
+                      isActive ? 'bg-primary text-primary-foreground shadow-sm' :
+                      isCompleted ? 'bg-green-100 text-green-800' :
+                      'bg-background hover:bg-muted/50'
+                    }`}
+                  >
+                    <step.icon className="h-4 w-4" />
+                    <span className="text-sm font-medium">{step.title}</span>
+                    {isCompleted && (
+                      <CheckCircle className="h-3 w-3 text-green-600 ml-auto" />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Current Status Info - Following Backend Progress */}
+            <div className="mt-6 p-3 bg-background rounded-lg border">
+              <div className="text-xs text-muted-foreground mb-1">Current Step</div>
+              <div className="font-medium text-sm">
+                {progress?.stage === 'extract' && 'Processing PDF'}
+                {progress?.stage === 'visual' && 'Visual Analysis'}
+                {progress?.stage === 'audio' && 'Audio Processing'}
+                {progress?.stage === 'analyze' && 'AI Analysis'}
+                {progress?.stage === 'generate' && 'Audio Briefing'}
+                {currentStep === 'upload' && 'Upload Synopsis'}
+                {currentStep === 'url' && 'Enter Trailer URL'}
+                {currentStep === 'results' && 'Analysis Complete'}
               </div>
-              {index < 2 && <div className={`w-8 h-px transition-colors duration-300 ${
-                index < (
-                  currentStep === 'upload' || currentStep === 'url' ? 0 :
-                  ['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) ? 1 :
-                  currentStep === 'results' ? 2 : -1
-                ) ? 'bg-green-400' :
-                'bg-border'
-              }`} />}
-            </React.Fragment>
-          ))}
+              {isAnalyzing && progress && (
+                <div className="mt-2">
+                  <div className="text-xs text-muted-foreground">{progress.percentage}%</div>
+                  <div className="w-full bg-muted rounded-full h-1 mt-1">
+                    <div
+                      className="bg-primary h-1 rounded-full transition-all duration-300"
+                      style={{ width: `${progress.percentage}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="space-y-6">
+      {/* Main Content Area */}
+      <div className="flex-1 min-h-screen">
+        {/* Mobile Header */}
+        <div className="lg:hidden bg-background border-b p-4 sticky top-0 z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Brain className="h-5 w-5 text-primary" />
+              <span className="text-lg font-semibold">Sorot.AI</span>
+            </div>
+            <Badge variant="default" className="text-xs bg-green-600">
+              Production Ready
+            </Badge>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="p-4 md:p-6 lg:p-8 max-w-none">
+          {/* Progress Steps - Mobile Only */}
+          <div className="lg:hidden flex justify-center mb-6">
+            <div className="flex items-center space-x-1 flex-wrap justify-center gap-1 w-full max-w-lg">
+              {[
+                { key: 'input', title: 'Input Data', icon: Upload },
+                { key: 'process', title: 'AI Analysis', icon: Brain },
+                { key: 'output', title: 'Results', icon: CheckCircle }
+              ].map((step, index) => (
+                <React.Fragment key={step.key}>
+                  <div className={`flex items-center space-x-1 px-2 py-2 rounded-lg transition-all duration-300 min-h-[44px] ${
+                    (currentStep === 'upload' || currentStep === 'url') && step.key === 'input' ? 'bg-primary text-primary-foreground shadow-md' :
+                    (['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) && step.key === 'process') ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                    (currentStep === 'results' && step.key === 'output') ? 'bg-green-100 text-green-800 border border-green-200' :
+                    index < (
+                      currentStep === 'upload' || currentStep === 'url' ? 0 :
+                      ['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) ? 1 :
+                      currentStep === 'results' ? 2 : -1
+                    ) ? 'bg-green-100 text-green-800 border border-green-200' :
+                    'bg-muted text-muted-foreground'
+                  }`}>
+                    <step.icon className="h-3 w-3 flex-shrink-0" />
+                    <span className="text-xs font-medium leading-tight">{step.title}</span>
+                  </div>
+                  {index < 2 && <div className={`w-4 h-px transition-colors duration-300 ${
+                    index < (
+                      currentStep === 'upload' || currentStep === 'url' ? 0 :
+                      ['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) ? 1 :
+                      currentStep === 'results' ? 2 : -1
+                    ) ? 'bg-green-400' :
+                    'bg-border'
+                  }`} />}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
+          {/* Main Content - Compact Layout */}
+          <div className="max-w-4xl mx-auto space-y-4 md:space-y-6 xl:max-w-5xl">
         {error && (
-          <Card className="border-destructive">
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2 text-destructive">
-                <X className="h-5 w-5" />
-                <span>{error}</span>
+              <Card className="border-destructive shadow-sm bg-destructive/5">
+                <CardContent className="pt-4 md:pt-6">
+                  <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                      <div className="flex items-start space-x-2 flex-1">
+                        <X className="h-4 w-4 md:h-5 md:w-5 text-destructive flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="font-medium text-destructive mb-1">Analysis Failed</h3>
+                          <p className="text-sm md:text-base text-destructive/90 leading-relaxed">
+                            {getErrorMessage(error)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        {canRetry(error) && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={handleRetry}
+                            className="min-h-[44px] bg-destructive hover:bg-destructive/90"
+                          >
+                            Try Again
+                          </Button>
+                        )}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setError(null)}
-                  className="ml-auto"
+                          className="w-full sm:w-auto min-h-[44px]"
                 >
                   Dismiss
                 </Button>
+                      </div>
+                    </div>
+
+                    {error.includes('network') || error.includes('timeout') ? (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 md:p-3">
+                        <p className="text-xs md:text-sm text-blue-800">
+                          💡 <strong>Tip:</strong> Check your internet connection and try again.
+                        </p>
+                      </div>
+                    ) : error.includes('file') || error.includes('PDF') ? (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 md:p-3">
+                        <p className="text-xs md:text-sm text-amber-800">
+                          💡 <strong>Suggestion:</strong> Make sure your PDF file is valid and try uploading again.
+                        </p>
+                      </div>
+                    ) : error.includes('video') || error.includes('trailer') ? (
+                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-2 md:p-3">
+                        <p className="text-xs md:text-sm text-purple-800">
+                          💡 <strong>Help:</strong> Ensure the trailer URL is valid and the video is accessible.
+                        </p>
+                      </div>
+                    ) : null}
               </div>
             </CardContent>
           </Card>
         )}
 
         {currentStep === 'upload' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Film Synopsis</CardTitle>
+              <Card className="shadow-sm">
+                <CardHeader className="pb-3 md:pb-4">
+                  <CardTitle className="text-lg md:text-xl">Upload Film Synopsis</CardTitle>
             </CardHeader>
-            <CardContent>
+                <CardContent className="pt-0">
               <FileUploadArea
                 onFileSelect={handleFileSelect}
                 onTextSubmit={handleTextSubmit}
@@ -352,66 +564,67 @@ export const FilmAnalysisContainer: React.FC = () => {
         )}
 
         {currentStep === 'url' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Enter Trailer URL</span>
-                <div className="flex items-center space-x-2">
+              <Card className="shadow-sm">
+                <CardHeader className="pb-3 md:pb-4">
+                  <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <span className="text-lg md:text-xl">Enter Trailer URL</span>
+                    <div className="flex flex-wrap items-center gap-1">
                   {inputType === 'file' && selectedFile && (
                     <Badge variant="secondary" className="text-xs">
-                      📄 PDF: {selectedFile.name}
+                          📄 {selectedFile.name.length > 15 ? `${selectedFile.name.substring(0, 15)}...` : selectedFile.name}
                     </Badge>
                   )}
                   {inputType === 'text' && synopsisText && (
                     <Badge variant="secondary" className="text-xs">
-                      📝 Text: {synopsisText.length} chars
+                          📝 {synopsisText.length} chars
                     </Badge>
                   )}
                 </div>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+                <CardContent className="pt-0">
               <TrailerUrlInput onUrlSubmit={handleUrlSubmit} />
             </CardContent>
           </Card>
         )}
 
         {(currentStep === 'extract' || currentStep === 'visual' || currentStep === 'audio' || currentStep === 'analyze' || currentStep === 'generate') && isAnalyzing && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>
+              <Card className="shadow-sm">
+                <CardHeader className="pb-3 md:pb-4">
+                  <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <span className="text-base md:text-lg">
                   {currentStep === 'extract' && 'Extracting Film Synopsis'}
                   {currentStep === 'visual' && 'Analyzing Visual Elements'}
                   {currentStep === 'audio' && 'Processing Audio Content'}
                   {currentStep === 'analyze' && 'Synthesizing AI Analysis'}
                   {currentStep === 'generate' && 'Generating Audio Briefing'}
                 </span>
-                <div className="text-xs text-muted-foreground text-right">
-                  {inputType === 'file' && selectedFile && <div>📄 {selectedFile.name}</div>}
-                  {inputType === 'text' && synopsisText && <div>📝 {synopsisText.length} chars</div>}
-                  {trailerUrl && <div>🎬 {trailerUrl}</div>}
-                </div>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+                <CardContent className="pt-0">
               <AnalysisProgress
                 progress={progress || {
                   stage: currentStep,
                   percentage: 0
                 }}
+                    error={error}
+                    onRetry={handleRetry}
               />
             </CardContent>
           </Card>
         )}
 
         {currentStep === 'results' && currentAnalysis && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Analysis Results</span>
-                  <Button variant="outline" onClick={resetAnalysis}>
+              <div className="space-y-4 md:space-y-6">
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-3 md:pb-4">
+                    <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <span className="text-lg md:text-xl">Analysis Results</span>
+                      <Button
+                        variant="outline"
+                        onClick={resetAnalysis}
+                        className="w-full sm:w-auto min-h-[44px]"
+                      >
                     Start New Analysis
                   </Button>
                 </CardTitle>
@@ -426,10 +639,12 @@ export const FilmAnalysisContainer: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <Separator />
-      <div className="text-center text-sm text-muted-foreground">
-        <p>Sorot.AI - AI-powered film curation for festival selectors</p>
-        <p>Powered by DeepSeek-R1, Google Gemini, and AWS services for comprehensive film analysis.</p>
+          <Separator className="mt-8 md:mt-12" />
+          <div className="text-center text-xs md:text-sm text-muted-foreground px-4 py-4 md:py-6">
+            <p className="mb-1">Sorot.AI - AI-powered film curation for festival selectors</p>
+            <p className="leading-relaxed">Powered by DeepSeek-R1, Google Gemini, and AWS services for comprehensive film analysis.</p>
+          </div>
+        </div>
       </div>
     </div>
   )

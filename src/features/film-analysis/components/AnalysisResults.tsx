@@ -10,7 +10,9 @@ import {
   Target,
   Lightbulb,
   ThumbsUp,
-  Play
+  Play,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { FilmAnalysis } from '@/types/analysis'
@@ -27,13 +29,30 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   // Add safety checks for the analysis data structure
   if (!analysis || !analysis.scores || typeof analysis.scores.overall !== 'number') {
     return (
-      <Card className={className}>
+      <Card className="shadow-sm">
         <CardContent className="pt-6">
-          <div className="text-center text-red-600">
-            <p>Analysis data is incomplete or malformed.</p>
-            <p className="text-sm text-gray-600 mt-2">
-              Please try the analysis again.
-            </p>
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-destructive">Results Unavailable</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
+                The analysis data appears to be incomplete or corrupted. This can happen due to:
+              </p>
+              <ul className="text-sm text-muted-foreground space-y-1 max-w-xs mx-auto text-left">
+                <li>• Network interruption during processing</li>
+                <li>• Server-side processing errors</li>
+                <li>• Corrupted analysis results</li>
+              </ul>
+            </div>
+            <Button
+              onClick={() => window.location.reload()}
+              className="min-h-[44px]"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Start New Analysis
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -55,104 +74,107 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   }
 
   return (
-    <div className={cn("space-y-6", className)}>
-      {/* Overall Score Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Analysis Results</span>
-            <Badge variant="secondary" className="text-lg px-3 py-1">
-              {analysis.aiModel === 'deepseek' ? 'DeepSeek-R1' : 'Gemini'} Analysis
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={cn(
-            "p-6 rounded-lg border-2 text-center",
-            getScoreBgColor(overallScore)
-          )}>
-            <div className="flex items-center justify-center mb-4">
-              <Star className={cn("h-8 w-8 mr-2", getScoreColor(overallScore))} />
-              <span className={cn("text-4xl font-bold", getScoreColor(overallScore))}>
-                {overallScore}/100
-              </span>
+    <div className={cn("space-y-4 md:space-y-6", className)}>
+      {/* Overall Score & Detailed Scores - 2 Column Layout on Desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        {/* Overall Score Card */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 md:pb-4">
+            <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="text-base md:text-lg">Analysis Results</span>
+              <Badge variant="secondary" className="text-xs md:text-sm px-2 py-1 w-fit">
+                {analysis.aiModel === 'deepseek' ? 'DeepSeek-R1' : 'Gemini'} Analysis
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className={cn(
+              "p-3 md:p-4 rounded-lg border-2 text-center",
+              getScoreBgColor(overallScore)
+            )}>
+              <div className="flex items-center justify-center mb-2 md:mb-3">
+                <Star className={cn("h-5 w-5 md:h-6 md:w-6 mr-2", getScoreColor(overallScore))} />
+                <span className={cn("text-xl md:text-2xl font-bold", getScoreColor(overallScore))}>
+                  {overallScore}/100
+                </span>
+              </div>
+              <p className="text-sm md:text-base font-medium mb-1">
+                {overallScore >= 80 ? 'Excellent' :
+                 overallScore >= 60 ? 'Good' : 'Needs Improvement'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Film festival suitability score
+              </p>
             </div>
-            <p className="text-lg font-medium mb-2">
-              {overallScore >= 80 ? 'Excellent' :
-               overallScore >= 60 ? 'Good' : 'Needs Improvement'}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Film festival suitability score
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Detailed Scores */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Detailed Scores</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(analysis.scores).map(([key, score]) => {
-              if (key === 'overall') return null
-              const labels = {
-                genre: 'Genre Classification',
-                theme: 'Thematic Depth',
-                targetAudience: 'Target Audience Fit',
-                technicalQuality: 'Technical Quality',
-                emotionalImpact: 'Emotional Impact'
-              }
+        {/* Detailed Scores */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 md:pb-4">
+            <CardTitle className="text-base md:text-lg">Detailed Scores</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+              {Object.entries(analysis.scores).map(([key, score]) => {
+                if (key === 'overall') return null
+                const labels = {
+                  genre: 'Genre Classification',
+                  theme: 'Thematic Depth',
+                  targetAudience: 'Target Audience Fit',
+                  technicalQuality: 'Technical Quality',
+                  emotionalImpact: 'Emotional Impact'
+                }
 
-              return (
-                <div key={key} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">
-                      {labels[key as keyof typeof labels]}
-                    </span>
-                    <span className={cn("text-sm font-bold", getScoreColor(score))}>
-                      {score}/100
-                    </span>
+                return (
+                  <div key={key} className="space-y-2 p-2 md:p-3 bg-muted/30 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs md:text-sm font-medium leading-tight">
+                        {labels[key as keyof typeof labels]}
+                      </span>
+                      <span className={cn("text-xs md:text-sm font-bold", getScoreColor(score))}>
+                        {score}/100
+                      </span>
+                    </div>
+                    <Progress value={score} className="h-1.5 md:h-2" />
                   </div>
-                  <Progress value={score} className="h-2" />
-                </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Analysis Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Analysis Details</CardTitle>
+      {/* Analysis Details - Compact Accordion */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3 md:pb-4">
+          <CardTitle className="text-base md:text-lg">Analysis Details</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Accordion type="multiple" className="w-full">
+        <CardContent className="pt-0">
+          <Accordion type="multiple" className="w-full space-y-2">
             {/* Genre & Themes */}
-            <AccordionItem value="genre-themes">
-              <AccordionTrigger className="text-left">
-                <div className="flex items-center">
-                  <Film className="h-4 w-4 mr-2" />
-                  Genre & Themes
+            <AccordionItem value="genre-themes" className="border rounded-lg">
+              <AccordionTrigger className="text-left px-3 py-2 md:px-4 md:py-3 hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Film className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm font-medium">Genre & Themes</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4">
+              <AccordionContent className="px-3 pb-3">
+                <div className="space-y-2 md:space-y-3">
                   <div>
-                    <h4 className="font-medium mb-2">Genres</h4>
-                    <div className="flex flex-wrap gap-2">
+                    <h4 className="font-medium mb-1 text-sm">Genres</h4>
+                    <div className="flex flex-wrap gap-1">
                       {analysis.insights.genre.map((genre, index) => (
-                        <Badge key={index} variant="secondary">{genre}</Badge>
+                        <Badge key={index} variant="secondary" className="text-xs">{genre}</Badge>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-medium mb-2">Themes</h4>
-                    <div className="flex flex-wrap gap-2">
+                    <h4 className="font-medium mb-1 text-sm">Themes</h4>
+                    <div className="flex flex-wrap gap-1">
                       {analysis.insights.themes.map((theme, index) => (
-                        <Badge key={index} variant="outline">{theme}</Badge>
+                        <Badge key={index} variant="outline" className="text-xs">{theme}</Badge>
                       ))}
                     </div>
                   </div>
@@ -161,34 +183,34 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             </AccordionItem>
 
             {/* Target Audience */}
-            <AccordionItem value="audience">
-              <AccordionTrigger className="text-left">
-                <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-2" />
-                  Target Audience
+            <AccordionItem value="audience" className="border rounded-lg">
+              <AccordionTrigger className="text-left px-3 py-2 md:px-4 md:py-3 hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm font-medium">Target Audience</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent>
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm">{analysis.insights.targetAudience}</p>
+              <AccordionContent className="px-3 pb-3">
+                <div className="p-2 md:p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs md:text-sm leading-relaxed">{analysis.insights.targetAudience}</p>
                 </div>
               </AccordionContent>
             </AccordionItem>
 
             {/* Key Moments */}
-            <AccordionItem value="key-moments">
-              <AccordionTrigger className="text-left">
-                <div className="flex items-center">
-                  <Target className="h-4 w-4 mr-2" />
-                  Key Moments
+            <AccordionItem value="key-moments" className="border rounded-lg">
+              <AccordionTrigger className="text-left px-3 py-2 md:px-4 md:py-3 hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm font-medium">Key Moments</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent>
-                <ul className="space-y-2">
+              <AccordionContent className="px-3 pb-3">
+                <ul className="space-y-1 md:space-y-2">
                   {analysis.insights.keyMoments.map((moment, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="inline-block w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                      <span className="text-sm">{moment}</span>
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="inline-block w-1 h-1 bg-primary rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-xs md:text-sm leading-relaxed">{moment}</span>
                     </li>
                   ))}
                 </ul>
@@ -196,19 +218,19 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             </AccordionItem>
 
             {/* Strengths */}
-            <AccordionItem value="strengths">
-              <AccordionTrigger className="text-left">
-                <div className="flex items-center text-green-600">
-                  <ThumbsUp className="h-4 w-4 mr-2" />
-                  Strengths
+            <AccordionItem value="strengths" className="border rounded-lg">
+              <AccordionTrigger className="text-left px-3 py-2 md:px-4 md:py-3 hover:no-underline">
+                <div className="flex items-center gap-2 text-green-600">
+                  <ThumbsUp className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm font-medium">Strengths</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent>
-                <ul className="space-y-2">
+              <AccordionContent className="px-3 pb-3">
+                <ul className="space-y-1 md:space-y-2">
                   {analysis.insights.strengths.map((strength, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="inline-block w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0" />
-                      <span className="text-sm">{strength}</span>
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="inline-block w-1 h-1 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-xs md:text-sm leading-relaxed">{strength}</span>
                     </li>
                   ))}
                 </ul>
@@ -216,19 +238,19 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             </AccordionItem>
 
             {/* Suggestions */}
-            <AccordionItem value="suggestions">
-              <AccordionTrigger className="text-left">
-                <div className="flex items-center text-blue-600">
-                  <Lightbulb className="h-4 w-4 mr-2" />
-                  Suggestions for Improvement
+            <AccordionItem value="suggestions" className="border rounded-lg">
+              <AccordionTrigger className="text-left px-3 py-2 md:px-4 md:py-3 hover:no-underline">
+                <div className="flex items-center gap-2 text-blue-600">
+                  <Lightbulb className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm font-medium">Suggestions</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent>
-                <ul className="space-y-2">
+              <AccordionContent className="px-3 pb-3">
+                <ul className="space-y-1 md:space-y-2">
                   {analysis.insights.suggestions.map((suggestion, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0" />
-                      <span className="text-sm">{suggestion}</span>
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="inline-block w-1 h-1 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-xs md:text-sm leading-relaxed">{suggestion}</span>
                     </li>
                   ))}
                 </ul>
@@ -238,31 +260,31 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         </CardContent>
       </Card>
 
-      {/* Audio Briefing */}
+      {/* Audio Briefing - Compact */}
       {analysis.audioBriefing && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Audio Briefing</CardTitle>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 md:pb-4">
+            <CardTitle className="text-base md:text-lg">Audio Briefing</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Play className="h-6 w-6 text-primary" />
+          <CardContent className="pt-0">
+            <div className="space-y-2 md:space-y-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Play className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 </div>
-                <div>
-                  <p className="font-medium">Analysis Audio Summary</p>
-                  <p className="text-sm text-muted-foreground">
-                    Generated by AWS Polly • {Math.round(analysis.audioBriefing.duration || 0)}s • {analysis.audioBriefing.voice}
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm">Analysis Audio Summary</p>
+                  <p className="text-xs text-muted-foreground">
+                    {Math.round(analysis.audioBriefing.duration || 0)}s • {analysis.audioBriefing.voice}
                   </p>
                 </div>
               </div>
 
               {/* HTML5 Audio Player */}
-              <div className="bg-muted/50 rounded-lg p-4">
+              <div className="bg-muted/50 rounded-lg p-2 md:p-3">
                 <audio
                   controls
-                  className="w-full"
+                  className="w-full h-10 md:h-12"
                   preload="metadata"
                 >
                   <source
@@ -275,19 +297,16 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   />
                   Your browser does not support the audio element.
                 </audio>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Click play to listen to the AI-generated audio summary of this film analysis
-                </p>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Footer */}
-      <div className="text-center text-sm text-muted-foreground">
-        <p>Analysis completed in {(analysis.processingStats.totalTime / 1000).toFixed(1)} seconds</p>
-        <p>Analysis ID: {analysis.id}</p>
+      {/* Footer - Compact */}
+      <div className="text-center text-xs text-muted-foreground py-2">
+        <p className="mb-1">Completed in {(analysis.processingStats.totalTime / 1000).toFixed(1)}s</p>
+        <p className="text-xs opacity-75">ID: {analysis.id}</p>
       </div>
     </div>
   )
