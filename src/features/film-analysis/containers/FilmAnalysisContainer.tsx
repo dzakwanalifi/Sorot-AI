@@ -37,7 +37,7 @@ export const FilmAnalysisContainer: React.FC = () => {
   const [trailerUrl, setTrailerUrl] = useState('')
   const [currentStep, setCurrentStep] = useState<'upload' | 'url' | 'analyze' | 'results'>('upload')
 
-  const { currentAnalysis, isAnalyzing, error, setAnalyzing, setError, setCurrentAnalysis, setProgress } = useAnalysisStore()
+  const { currentAnalysis, isAnalyzing, error, setAnalyzing, setError, setCurrentAnalysis, setProgress, progress } = useAnalysisStore()
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file)
@@ -102,11 +102,11 @@ export const FilmAnalysisContainer: React.FC = () => {
 
               // Map backend step numbers to frontend stage names
               const stageMapping = {
-                1: 'upload',
-                2: 'download',
-                3: 'transcribe',
-                4: 'analyze',
-                5: 'generate'
+                1: 'extract', // Processing PDF
+                2: 'download', // Downloading Trailer
+                3: 'transcribe', // Transcribing Audio
+                4: 'analyze', // AI Analysis
+                5: 'generate' // Generating Audio Brief
               }
 
               const stage = stageMapping[progress.currentStep as keyof typeof stageMapping] || 'analyze'
@@ -305,11 +305,9 @@ export const FilmAnalysisContainer: React.FC = () => {
             </CardHeader>
             <CardContent>
               <AnalysisProgress
-                progress={{
+                progress={progress || {
                   stage: 'analyze',
-                  percentage: 75,
-                  currentStep: 3,
-                  totalSteps: 4
+                  percentage: 0
                 }}
               />
             </CardContent>

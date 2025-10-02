@@ -1,6 +1,10 @@
 import { Handler } from '@netlify/functions'
+import { config } from 'dotenv'
 import { processFilmAnalysis } from '../utils/filmAnalysisProcessor'
 import { progressStore, updateProgress, completeProgress, failProgress } from '../utils/progressStore'
+
+// Load environment variables
+config()
 
 // Status endpoint for checking analysis progress
 export const statusHandler: Handler = async (event) => {
