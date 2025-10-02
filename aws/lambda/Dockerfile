@@ -4,9 +4,12 @@ FROM node:18-alpine AS base
 # Install system dependencies for video/audio processing
 RUN apk add --no-cache \
     python3 \
+    py3-pip \
     ffmpeg \
-    yt-dlp \
     && rm -rf /var/cache/apk/*
+
+# Install yt-dlp via pip3 for reliable binary availability
+RUN pip3 install --no-cache-dir --break-system-packages yt-dlp
 
 # Set working directory
 WORKDIR /app
@@ -33,9 +36,12 @@ FROM node:18-alpine AS production
 # Install runtime dependencies
 RUN apk add --no-cache \
     python3 \
+    py3-pip \
     ffmpeg \
-    yt-dlp \
     && rm -rf /var/cache/apk/*
+
+# Install yt-dlp via pip3 for reliable binary availability
+RUN pip3 install --no-cache-dir --break-system-packages yt-dlp
 
 # Create app directory
 WORKDIR /app

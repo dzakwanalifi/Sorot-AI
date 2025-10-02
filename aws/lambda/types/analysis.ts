@@ -36,7 +36,7 @@ export interface FilmAnalysis {
     generatedAt: Date
     voice: string
   }
-  aiModel: 'openai' | 'gemini'
+  aiModel: 'deepseek' | 'openai' | 'gemini'
   processingStats: {
     transcriptionTime: number
     analysisTime: number

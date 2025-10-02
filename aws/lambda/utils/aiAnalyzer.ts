@@ -1,30 +1,35 @@
-import { analyzeWithOpenAI } from './openaiService.js'
-import { analyzeWithGemini } from './geminiService.js'
+import { analyzeWithDeepSeek } from './openaiService.js'
+import { analyzeWithGeminiVisual } from './geminiService.js'
 import type { FilmAnalysis } from '../types/analysis.js'
 
 export interface AIAnalysisResult {
   scores: FilmAnalysis['scores']
   insights: FilmAnalysis['insights']
-  aiModel: 'openai' | 'gemini'
+  aiModel: 'deepseek' | 'gemini'
+}
+
+export interface VisualAnalysisResult {
+  visualAnalysis: string
+  timestamps: Array<{time: string, description: string}>
+  emotionalTone: string
+  visualStyle: string
+}
+
+export async function analyzeFilmVisually(trailerUrl: string): Promise<VisualAnalysisResult> {
+  console.log('Starting Gemini visual analysis for trailer:', trailerUrl)
+  return await analyzeWithGeminiVisual(trailerUrl)
 }
 
 export async function analyzeFilmContent(
   synopsis: string,
-  transcript: string,
-  trailerUrl: string
+  visualAnalysis: VisualAnalysisResult,
+  transcript: string | null
 ): Promise<AIAnalysisResult> {
-  // Decision logic: Use Gemini for visual analysis if transcript is too short
-  const transcriptLength = transcript.trim().length
-  const shouldUseGemini = transcriptLength < 50
+  console.log('Starting AI synthesis with combined visual and audio data')
+  console.log(`Visual analysis length: ${visualAnalysis.visualAnalysis.length} characters`)
+  console.log(`Transcript available: ${transcript ? transcript.length + ' characters' : 'No transcript'}`)
 
-  console.log(`Transcript length: ${transcriptLength} characters`)
-  console.log(`Using ${shouldUseGemini ? 'Gemini' : 'OpenAI'} for analysis`)
-
-  if (shouldUseGemini) {
-    console.log('Routing to Gemini for visual analysis (insufficient transcript)')
-    return await analyzeWithGemini(synopsis, transcript, trailerUrl)
-  } else {
-    console.log('Routing to OpenAI for comprehensive text analysis')
-    return await analyzeWithOpenAI(synopsis, transcript)
-  }
+  // Always use DeepSeek-R1 for final synthesis combining visual analysis + transcript
+  console.log('Routing to DeepSeek-R1 for comprehensive synthesis analysis')
+  return await analyzeWithDeepSeek(synopsis, visualAnalysis, transcript || 'No transcript available')
 }

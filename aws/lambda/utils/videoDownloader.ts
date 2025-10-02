@@ -100,12 +100,18 @@ export async function downloadVideoAudio(youtubeUrl: string): Promise<string> {
   } catch (error) {
     console.error('Error downloading video audio:', error)
 
-    // Clean up temp file if it exists
+    // Clean up temp file if it exists (safe cleanup)
     if (tempFilePath) {
       try {
+        // Check if file exists before attempting to delete
+        await fs.access(tempFilePath)
         await fs.unlink(tempFilePath)
-      } catch (cleanupError) {
-        console.warn('Failed to clean up temp file:', cleanupError)
+        console.log(`Cleaned up temp file: ${tempFilePath}`)
+      } catch (cleanupError: any) {
+        // Only log error if it's not "file not found" (which is expected)
+        if (cleanupError.code !== 'ENOENT') {
+          console.warn('Failed to clean up temp file:', cleanupError.message)
+        }
       }
     }
 

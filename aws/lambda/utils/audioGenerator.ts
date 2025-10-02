@@ -43,7 +43,7 @@ export async function generateAudioBriefing(analysis: AIAnalysisResult): Promise
       OutputFormat: 'mp3',
       VoiceId: 'Joanna', // Neural voice for better quality
       Engine: 'neural',
-      TextType: 'ssml' // Use SSML for better speech control
+      TextType: 'text' // Use plain text for simpler processing
     })
 
     const response = await pollyClient.send(command)
@@ -71,42 +71,29 @@ export async function generateAudioBriefing(analysis: AIAnalysisResult): Promise
 function generateBriefingText(analysis: AIAnalysisResult): string {
   const { scores, insights } = analysis
 
-  // Use SSML for better speech synthesis control
-  const text = `<speak>
-    <prosody rate="medium" volume="default">
-      Film Analysis Briefing.
+  // Generate clean, natural speech text
+  const text = `Film Analysis Briefing.
 
-      <break time="500ms"/>
-      Overall Score: ${scores.overall} out of 100.
+Overall Score: ${scores.overall} out of 100.
 
-      <break time="300ms"/>
-      Genre Classification: ${scores.genre} out of 100.
-      Primary genres identified: ${insights.genre.join(', ')}.
+Genre Classification: ${scores.genre} out of 100.
+Primary genres identified: ${insights.genre.join(', ')}.
 
-      <break time="300ms"/>
-      Thematic Depth: ${scores.theme} out of 100.
-      Key themes: ${insights.themes.join(', ')}.
+Thematic Depth: ${scores.theme} out of 100.
+Key themes: ${insights.themes.join(', ')}.
 
-      <break time="300ms"/>
-      Target Audience Fit: ${scores.targetAudience} out of 100.
-      Target audience: ${insights.targetAudience}.
+Target Audience Fit: ${scores.targetAudience} out of 100.
+Target audience: ${insights.targetAudience}.
 
-      <break time="300ms"/>
-      Technical Quality: ${scores.technicalQuality} out of 100.
+Technical Quality: ${scores.technicalQuality} out of 100.
 
-      <break time="300ms"/>
-      Emotional Impact: ${scores.emotionalImpact} out of 100.
+Emotional Impact: ${scores.emotionalImpact} out of 100.
 
-      <break time="500ms"/>
-      Key strengths: ${insights.strengths.join('. ')}.
+Key strengths: ${insights.strengths.join('. ')}.
 
-      <break time="500ms"/>
-      Areas for improvement: ${insights.suggestions.join('. ')}.
+Areas for improvement: ${insights.suggestions.join('. ')}.
 
-      <break time="700ms"/>
-      This analysis was generated using ${analysis.aiModel === 'openai' ? 'OpenAI GPT OSS-120B' : 'Google Gemini'} artificial intelligence.
-    </prosody>
-  </speak>`
+This analysis was generated using ${analysis.aiModel === 'deepseek' ? 'DeepSeek-R1' : analysis.aiModel === 'gemini' ? 'Google Gemini' : 'OpenAI GPT OSS-120B'} artificial intelligence.`
 
   return text.trim()
 }

@@ -2,7 +2,7 @@
 
 ## 🎯 Project Overview
 - [ ] Sorot.AI sebagai platform kurasi film berbasis AI untuk selector festival film Indonesia
-- [ ] Dual AI capabilities: OpenAI gpt-oss-120b (AWS Bedrock) + Gemini 2.5 Flash-Lite (Google Vertex AI)
+- [x] Dual AI capabilities: DeepSeek-R1 (AWS Bedrock) + Gemini 2.5 Flash-Lite (Google Vertex AI)
 - [ ] Hybrid approach: text analysis utama + visual analysis fallback
 
 ---
@@ -150,7 +150,7 @@
 
 ### 5.2 AI Model Decision Logic
 - [x] Check transcript length (<50 words?)
-- [x] Route to OpenAI (primary) atau Gemini (fallback)
+- [x] Route to DeepSeek-R1 (primary) untuk comprehensive synthesis
 - [x] Cost optimization: minimize Gemini usage
 
 ### 5.3 Response Format
@@ -312,13 +312,13 @@
 ---
 
 ## 💰 Cost Estimation (Monthly) - UPDATED
-- [x] AWS Bedrock (OpenAI gpt-oss-120b): $0.04-0.08 (for 100-200 analyses)
-- [x] Google Gemini 2.5 Flash-Lite (transcription): $0.03-0.06 (for 100 transcriptions)
-- [x] Google Gemini 2.5 Flash-Lite (visual analysis): $0.01-0.02 (fallback only, ~5% usage)
+- [x] AWS Bedrock (DeepSeek-R1): $0.03-0.06 (for 100-200 analyses, cost-effective reasoning model)
+- [x] Google Gemini 2.5 Flash-Lite (visual analysis): $0.04-0.08 (MANDATORY for all analyses)
+- [x] Google Gemini 2.5 Flash-Lite (transcription): $0.01-0.02 (optional enhancement, ~70% success rate)
 - [x] AWS Polly (Neural): $0.08-0.16 (for 100 briefings)
 - [x] AWS Lambda (Container): $0.20 per 1M requests + free tier 1M requests
 - [x] **Total**: $0.16-0.32 (within $5 budget for 100 analyses)
-- [x] **Architecture**: Gemini transcription (primary) → OpenAI analysis → Polly audio
+- [x] **Architecture**: Gemini visual (MANDATORY) + transcription (optional) → DeepSeek-R1 synthesis → Polly audio
 
 ---
 
