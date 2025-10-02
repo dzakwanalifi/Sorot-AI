@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
 import { Separator } from '@/shared/components/ui/separator'
-import { Upload, Youtube, Brain, CheckCircle, X, FileText, Eye, Mic, Cog, Volume2 } from 'lucide-react'
+import { Upload, Brain, CheckCircle, X } from 'lucide-react'
 import { useAnalysisStore } from '@/lib/store'
 import { apiClient } from '../../../shared/services'
 import { fileToBase64 } from '../../../shared/utils'
@@ -256,33 +256,6 @@ export const FilmAnalysisContainer: React.FC = () => {
     setError(null)
   }
 
-  const getStepIcon = (step: string) => {
-    switch (step) {
-      case 'upload': return <Upload className="h-4 w-4" />
-      case 'url': return <Youtube className="h-4 w-4" />
-      case 'extract': return <FileText className="h-4 w-4" />
-      case 'visual': return <Eye className="h-4 w-4" />
-      case 'audio': return <Mic className="h-4 w-4" />
-      case 'analyze': return <Cog className="h-4 w-4" />
-      case 'generate': return <Volume2 className="h-4 w-4" />
-      case 'results': return <CheckCircle className="h-4 w-4" />
-      default: return null
-    }
-  }
-
-  const getStepTitle = (step: string) => {
-    switch (step) {
-      case 'upload': return 'Upload Synopsis'
-      case 'url': return 'Enter Trailer URL'
-      case 'extract': return 'Extract Text'
-      case 'visual': return 'Visual Analysis'
-      case 'audio': return 'Audio Processing'
-      case 'analyze': return 'AI Synthesis'
-      case 'generate': return 'Generate Audio'
-      case 'results': return 'Complete'
-      default: return ''
-    }
-  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -302,7 +275,7 @@ export const FilmAnalysisContainer: React.FC = () => {
         <CardContent>
           <p className="text-muted-foreground">
             Analyze film trailers and synopses using dual AI capabilities:
-            OpenAI GPT OSS-120B for text analysis and Google Gemini for visual analysis.
+            DeepSeek-R1 for comprehensive analysis and Google Gemini for visual analysis.
           </p>
         </CardContent>
       </Card>
@@ -310,26 +283,33 @@ export const FilmAnalysisContainer: React.FC = () => {
       {/* Progress Steps */}
       <div className="flex justify-center">
         <div className="flex items-center space-x-2 flex-wrap justify-center gap-2">
-          {['upload', 'url', 'extract', 'visual', 'audio', 'analyze', 'generate', 'results'].map((step, index) => (
-            <React.Fragment key={step}>
-              <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-300 ${
-                currentStep === step
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : index < ['upload', 'url', 'extract', 'visual', 'audio', 'analyze', 'generate', 'results'].indexOf(currentStep)
-                  ? 'bg-green-100 text-green-800 border border-green-200'
-                  : 'bg-muted text-muted-foreground'
+          {[
+            { key: 'input', title: 'Input Data', icon: Upload },
+            { key: 'process', title: 'AI Analysis', icon: Brain },
+            { key: 'output', title: 'Hasil Analisis', icon: CheckCircle }
+          ].map((step, index) => (
+            <React.Fragment key={step.key}>
+              <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+                (currentStep === 'upload' || currentStep === 'url') && step.key === 'input' ? 'bg-primary text-primary-foreground shadow-md' :
+                (['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) && step.key === 'process') ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                (currentStep === 'results' && step.key === 'output') ? 'bg-green-100 text-green-800 border border-green-200' :
+                index < [
+                  currentStep === 'upload' || currentStep === 'url' ? 0 :
+                  ['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) ? 1 :
+                  currentStep === 'results' ? 2 : -1
+                ] ? 'bg-green-100 text-green-800 border border-green-200' :
+                'bg-muted text-muted-foreground'
               }`}>
-                {index < ['upload', 'url', 'extract', 'visual', 'audio', 'analyze', 'generate', 'results'].indexOf(currentStep) ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : (
-                  getStepIcon(step)
-                )}
-                <span className="text-sm font-medium">{getStepTitle(step)}</span>
+                <step.icon className="h-4 w-4" />
+                <span className="text-sm font-medium">{step.title}</span>
               </div>
-              {index < 7 && <div className={`w-6 h-px transition-colors duration-300 ${
-                index < ['upload', 'url', 'extract', 'visual', 'audio', 'analyze', 'generate', 'results'].indexOf(currentStep)
-                  ? 'bg-green-400'
-                  : 'bg-border'
+              {index < 2 && <div className={`w-8 h-px transition-colors duration-300 ${
+                index < [
+                  currentStep === 'upload' || currentStep === 'url' ? 0 :
+                  ['extract', 'visual', 'audio', 'analyze', 'generate'].includes(currentStep) ? 1 :
+                  currentStep === 'results' ? 2 : -1
+                ] ? 'bg-green-400' :
+                'bg-border'
               }`} />}
             </React.Fragment>
           ))}
@@ -454,7 +434,7 @@ export const FilmAnalysisContainer: React.FC = () => {
       <Separator />
       <div className="text-center text-sm text-muted-foreground">
         <p>Sorot.AI - AI-powered film curation for festival selectors</p>
-        <p>Powered by OpenAI GPT OSS-120B, Google Gemini, and AWS services for comprehensive film analysis.</p>
+        <p>Powered by DeepSeek-R1, Google Gemini, and AWS services for comprehensive film analysis.</p>
       </div>
     </div>
   )

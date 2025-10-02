@@ -197,9 +197,10 @@ Return ONLY valid JSON, no additional text.
             } else {
               throw new Error('Parsed JSON does not have expected structure')
             }
-          } catch (jsonError: any) {
-            console.error('Failed to parse extracted JSON:', jsonError.message)
-            throw new Error(`JSON parsing failed: ${jsonError.message}`)
+          } catch (jsonError: unknown) {
+            const errorMessage = jsonError instanceof Error ? jsonError.message : 'Unknown parsing error'
+            console.error('Failed to parse extracted JSON:', errorMessage)
+            throw new Error(`JSON parsing failed: ${errorMessage}`)
           }
         } else {
           throw new Error('Could not find matching closing brace for JSON')

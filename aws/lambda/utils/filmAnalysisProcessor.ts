@@ -150,9 +150,10 @@ export async function processFilmAnalysis(
         await fs.access(audioPath)
         await fs.unlink(audioPath)
         console.log(`Cleaned up temp audio file after successful processing: ${audioPath}`)
-      } catch (cleanupError: any) {
-        if (cleanupError.code !== 'ENOENT') {
-          console.warn('Failed to clean up temp audio file:', cleanupError.message)
+      } catch (cleanupError: unknown) {
+        const error = cleanupError as { code?: string; message?: string }
+        if (error.code !== 'ENOENT') {
+          console.warn('Failed to clean up temp audio file:', error.message || 'Unknown error')
         }
       }
     }
