@@ -6,14 +6,11 @@ import { Button } from '@/shared/components/ui/button'
 import { Progress } from '@/shared/components/ui/progress'
 import {
   Star,
-  TrendingUp,
   Users,
   Film,
   Target,
   Lightbulb,
   ThumbsUp,
-  ThumbsDown,
-  Copy,
   Play
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -21,14 +18,12 @@ import type { FilmAnalysis } from '@/types/analysis'
 
 interface AnalysisResultsProps {
   analysis: FilmAnalysis
-  onCopyToClipboard?: (text: string) => void
   onPlayAudio?: (url: string) => void
   className?: string
 }
 
 export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   analysis,
-  onCopyToClipboard,
   onPlayAudio,
   className
 }) => {
