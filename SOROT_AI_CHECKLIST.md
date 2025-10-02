@@ -80,10 +80,11 @@
 
 ### 3.2 Core Components
 - [x] Button component (shadcn/ui style) dibuat
-- [x] FileUploadArea component dengan drag-drop dibuat
+- [x] FileUploadArea component dengan drag-drop + paste text dibuat
 - [x] TrailerUrlInput component dengan validation dibuat
 - [x] AnalysisProgress component dengan animated states dibuat
 - [x] AnalysisResults component dengan collapsible sections dibuat
+- [x] Textarea component untuk text input dibuat
 
 ### 3.3 State Management
 - [x] Zustand store untuk analysis state dikonfigurasi

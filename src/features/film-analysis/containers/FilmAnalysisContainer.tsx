@@ -13,6 +13,8 @@ import type { FilmAnalysis } from '@/types/analysis'
 
 export const FilmAnalysisContainer: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [synopsisText, setSynopsisText] = useState('')
+  const [inputType, setInputType] = useState<'file' | 'text'>('file')
   const [trailerUrl, setTrailerUrl] = useState('')
   const [currentStep, setCurrentStep] = useState<'upload' | 'url' | 'analyze' | 'results'>('upload')
 
@@ -20,6 +22,15 @@ export const FilmAnalysisContainer: React.FC = () => {
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file)
+    setSynopsisText('') // Clear text if switching to file
+    setInputType('file')
+    setCurrentStep('url')
+  }
+
+  const handleTextSubmit = (text: string) => {
+    setSynopsisText(text)
+    setSelectedFile(null) // Clear file if switching to text
+    setInputType('text')
     setCurrentStep('url')
   }
 
@@ -84,6 +95,8 @@ export const FilmAnalysisContainer: React.FC = () => {
 
   const resetAnalysis = () => {
     setSelectedFile(null)
+    setSynopsisText('')
+    setInputType('file')
     setTrailerUrl('')
     setCurrentStep('upload')
     setCurrentAnalysis(null)
@@ -181,7 +194,10 @@ export const FilmAnalysisContainer: React.FC = () => {
               <CardTitle>Step 1: Upload Film Synopsis</CardTitle>
             </CardHeader>
             <CardContent>
-              <FileUploadArea onFileSelect={handleFileSelect} />
+              <FileUploadArea
+                onFileSelect={handleFileSelect}
+                onTextSubmit={handleTextSubmit}
+              />
             </CardContent>
           </Card>
         )}
@@ -191,11 +207,18 @@ export const FilmAnalysisContainer: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Step 2: Enter Trailer URL</span>
-                {selectedFile && (
-                  <Badge variant="secondary" className="text-xs">
-                    PDF: {selectedFile.name}
-                  </Badge>
-                )}
+                <div className="flex items-center space-x-2">
+                  {inputType === 'file' && selectedFile && (
+                    <Badge variant="secondary" className="text-xs">
+                      📄 PDF: {selectedFile.name}
+                    </Badge>
+                  )}
+                  {inputType === 'text' && synopsisText && (
+                    <Badge variant="secondary" className="text-xs">
+                      📝 Text: {synopsisText.length} chars
+                    </Badge>
+                  )}
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -209,8 +232,9 @@ export const FilmAnalysisContainer: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Step 3: AI Analysis in Progress</span>
-                <div className="text-xs text-muted-foreground">
-                  {selectedFile && <div>📄 {selectedFile.name}</div>}
+                <div className="text-xs text-muted-foreground text-right">
+                  {inputType === 'file' && selectedFile && <div>📄 {selectedFile.name}</div>}
+                  {inputType === 'text' && synopsisText && <div>📝 {synopsisText.length} chars</div>}
                   {trailerUrl && <div>🎬 {trailerUrl}</div>}
                 </div>
               </CardTitle>
