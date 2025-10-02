@@ -107,7 +107,7 @@ aws/
 ## Deployment
 
 ### Frontend
-Deploy to Netlify/Vercel with these build settings:
+Deploy to AWS Lambda with these build settings:
 - **Build command**: `npm run build`
 - **Publish directory**: `dist`
 - **Node version**: 18.x
