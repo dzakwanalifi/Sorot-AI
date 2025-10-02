@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import type { AIAnalysisResult } from './aiAnalyzer.js'
+import type { AIAnalysisResult, VisualAnalysisResult } from './aiAnalyzer.js'
 
 // Validate Gemini API key is present
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
@@ -10,68 +10,44 @@ if (!GEMINI_API_KEY) {
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' })
 
-export async function analyzeWithGemini(
-  synopsis: string,
-  transcript: string,
-  trailerUrl: string
-): Promise<AIAnalysisResult> {
+
+export async function analyzeWithGeminiVisual(trailerUrl: string): Promise<VisualAnalysisResult> {
   try {
-    console.log('Starting Gemini visual analysis')
-
-    console.log('Using Gemini API with configured key')
-
-    // Extract YouTube video ID for API
-    const videoIdMatch = trailerUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
-    const videoId = videoIdMatch ? videoIdMatch[1] : null
-
-    if (!videoId) {
-      throw new Error('Could not extract YouTube video ID')
-    }
+    console.log('Starting Gemini visual analysis for trailer:', trailerUrl)
 
     const prompt = `
-You are an expert film critic specializing in visual storytelling analysis. Analyze this film trailer and synopsis for festival selection potential.
+You are an expert film critic specializing in visual storytelling analysis. Analyze this film trailer's visual elements comprehensively.
 
-SYNOPSIS:
-${synopsis}
+Focus on:
+1. VISUAL STORYTELLING: Describe key visual elements, color palette, composition, camera work, editing rhythm
+2. EMOTIONAL TONE: Analyze mood, atmosphere, character expressions, lighting effects
+3. CINEMATOGRAPHIC TECHNIQUES: Camera angles, movement, transitions, visual effects
+4. KEY SCENES: Provide timestamps (MM:SS format) for important visual moments
+5. VISUAL STYLE: Overall aesthetic, genre indicators, production quality
 
-TRANSCRIPT (limited):
-${transcript}
-
-TRAILER URL: https://www.youtube.com/watch?v=${videoId}
-
-Based on the visual storytelling, cinematography, editing, and thematic elements you can infer from the trailer, provide a comprehensive analysis in the following JSON format:
+Return a detailed analysis in the following JSON format:
 
 {
-  "scores": {
-    "overall": <number 0-100>,
-    "genre": <number 0-100>,
-    "theme": <number 0-100>,
-    "targetAudience": <number 0-100>,
-    "technicalQuality": <number 0-100>,
-    "emotionalImpact": <number 0-100>
-  },
-  "insights": {
-    "genre": ["primary genre", "secondary genre"],
-    "themes": ["theme1", "theme2", "theme3"],
-    "targetAudience": "detailed description based on visual style and themes",
-    "keyMoments": ["visual moment1", "visual moment2", "visual moment3"],
-    "strengths": ["visual strength1", "visual strength2", "visual strength3"],
-    "suggestions": ["visual improvement1", "visual improvement2"]
-  }
+  "visualAnalysis": "Comprehensive description of visual storytelling and cinematography",
+  "timestamps": [
+    {"time": "00:05", "description": "Opening scene visual description"},
+    {"time": "00:15", "description": "Key emotional moment description"},
+    {"time": "00:30", "description": "Climax scene visual description"}
+  ],
+  "emotionalTone": "Overall emotional atmosphere and mood",
+  "visualStyle": "Cinematography style, color palette, production aesthetic"
 }
 
-Guidelines for visual analysis:
-- Analyze cinematography, lighting, composition, color palette
-- Consider editing rhythm and visual storytelling techniques
-- Evaluate how visuals support the emotional narrative
-- Assess technical quality of production values
-- Consider festival appeal based on artistic merit and innovation
+Guidelines:
+- Use timestamps in MM:SS format for specific moments
+- Focus on visual elements that reveal story, character, and theme
+- Analyze how cinematography supports emotional narrative
+- Consider festival appeal based on visual innovation and artistry
 
 Return ONLY valid JSON, no additional text.
     `.trim()
 
-    // For YouTube URLs, we can pass them directly to Gemini
-    console.log('Calling Gemini API with prompt length:', prompt.length)
+    console.log('Calling Gemini API for visual analysis')
 
     const result = await model.generateContent([
       prompt,
@@ -83,28 +59,48 @@ Return ONLY valid JSON, no additional text.
       }
     ])
 
-    console.log('Gemini API call completed, getting response...')
     const response = await result.response
     const analysisText = response.text()
 
-    console.log('Received response from Gemini, length:', analysisText.length)
-    console.log('Gemini response preview:', analysisText.substring(0, 200) + '...')
+    console.log('Received visual analysis from Gemini, length:', analysisText.length)
+    console.log('Raw Gemini response preview:', analysisText.substring(0, 500) + '...')
+
+    // Extract JSON from response (handle markdown code blocks)
+    let jsonText = analysisText.trim()
+
+    // Remove markdown code blocks if present
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '')
+    }
+
+    // If still starts with backtick, try to find JSON within
+    if (jsonText.includes('`')) {
+      const jsonMatch = jsonText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        jsonText = jsonMatch[0]
+      }
+    }
+
+    console.log('Extracted JSON text:', jsonText.substring(0, 200) + '...')
 
     // Parse the JSON response
-    const analysisResult = JSON.parse(analysisText)
+    const analysisResult = JSON.parse(jsonText)
 
     return {
-      scores: analysisResult.scores,
-      insights: analysisResult.insights,
-      aiModel: 'gemini'
+      visualAnalysis: analysisResult.visualAnalysis,
+      timestamps: analysisResult.timestamps || [],
+      emotionalTone: analysisResult.emotionalTone,
+      visualStyle: analysisResult.visualStyle
     }
 
   } catch (error) {
-    console.error('Error in Gemini analysis:', error)
+    console.error('Error in Gemini visual analysis:', error)
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
-    // Provide specific error messages for common issues
+    // Provide specific error messages
     if (errorMessage.includes('API key not valid')) {
       throw new Error('Invalid Gemini API key. Please check your API key configuration')
     }
@@ -117,6 +113,6 @@ Return ONLY valid JSON, no additional text.
       throw new Error('Gemini API rate limit exceeded. Please try again later')
     }
 
-    throw new Error(`Gemini analysis failed: ${errorMessage}`)
+    throw new Error(`Gemini visual analysis failed: ${errorMessage}`)
   }
 }

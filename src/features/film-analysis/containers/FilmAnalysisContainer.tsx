@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
 import { Separator } from '@/shared/components/ui/separator'
-import { Upload, Youtube, Brain, CheckCircle, X } from 'lucide-react'
+import { Upload, Youtube, Brain, CheckCircle, X, FileText, Eye, Mic, Cog, Volume2 } from 'lucide-react'
 import { useAnalysisStore } from '@/lib/store'
 import { apiClient } from '../../../shared/services'
 import { fileToBase64 } from '../../../shared/utils'
@@ -41,7 +41,7 @@ export const FilmAnalysisContainer: React.FC = () => {
   const [synopsisText, setSynopsisText] = useState('')
   const [inputType, setInputType] = useState<'file' | 'text'>('file')
   const [trailerUrl, setTrailerUrl] = useState('')
-  const [currentStep, setCurrentStep] = useState<'upload' | 'url' | 'analyze' | 'results'>('upload')
+  const [currentStep, setCurrentStep] = useState<'upload' | 'url' | 'extract' | 'visual' | 'audio' | 'analyze' | 'generate' | 'results'>('upload')
 
   const { currentAnalysis, isAnalyzing, error, setAnalyzing, setError, setCurrentAnalysis, setProgress, progress } = useAnalysisStore()
 
@@ -61,10 +61,10 @@ export const FilmAnalysisContainer: React.FC = () => {
 
   const handleUrlSubmit = async (url: string) => {
     setTrailerUrl(url)
-    setCurrentStep('analyze')
+    setCurrentStep('extract')
     setAnalyzing(true)
     setError(null)
-    setProgress({ stage: 'upload', percentage: 10 })
+    setProgress({ stage: 'extract', percentage: 10 })
 
     try {
       let pdfData: string
@@ -101,8 +101,17 @@ export const FilmAnalysisContainer: React.FC = () => {
         // Smart polling with exponential backoff for better performance
         let pollCount = 0
         let pollInterval: NodeJS.Timeout
+        let consecutiveErrors = 0
+        const maxConsecutiveErrors = 5
         // eslint-disable-next-line prefer-const
         let timeoutId: NodeJS.Timeout | undefined
+
+        // Exponential backoff calculator
+        const calculateBackoffDelay = (attempt: number, baseDelay: number = 1000, maxDelay: number = 30000): number => {
+          const exponentialDelay = baseDelay * Math.pow(2, attempt)
+          const jitter = Math.random() * 0.1 * exponentialDelay // Add 10% jitter
+          return Math.min(exponentialDelay + jitter, maxDelay)
+        }
 
         const smartPolling = async () => {
           try {
@@ -111,17 +120,32 @@ export const FilmAnalysisContainer: React.FC = () => {
             if (statusResponse.success && statusResponse.data?.data) {
               const progress = statusResponse.data.data
               pollCount++
+              consecutiveErrors = 0 // Reset error counter on success
 
               // Map backend step numbers to frontend stage names
               const stageMapping = {
                 1: 'extract', // Processing PDF
-                2: 'download', // Downloading Trailer
-                3: 'transcribe', // Transcribing Audio
-                4: 'analyze', // AI Analysis
+                2: 'visual', // Visual Analysis (Gemini)
+                3: 'audio', // Audio Enhancement (optional)
+                4: 'analyze', // AI Synthesis (OpenAI)
                 5: 'generate' // Generating Audio Brief
               }
 
               const stage = stageMapping[progress.currentStep as keyof typeof stageMapping] || 'analyze'
+
+              // Update current step based on backend progress
+              const stepMapping = {
+                1: 'extract',
+                2: 'visual',
+                3: 'audio',
+                4: 'analyze',
+                5: 'generate'
+              } as const
+
+              const newCurrentStep = stepMapping[progress.currentStep as keyof typeof stepMapping] || 'analyze'
+              if (newCurrentStep !== currentStep) {
+                setCurrentStep(newCurrentStep)
+              }
 
               setProgress({
                 stage,
@@ -131,7 +155,7 @@ export const FilmAnalysisContainer: React.FC = () => {
               })
 
               if (progress.status === 'completed' && progress.result) {
-                clearInterval(pollInterval)
+                clearTimeout(pollInterval)
                 if (timeoutId) clearTimeout(timeoutId)
                 setProgress({ stage: 'complete', percentage: 100 })
                 setCurrentAnalysis(progress.result)
@@ -139,32 +163,59 @@ export const FilmAnalysisContainer: React.FC = () => {
                 setAnalyzing(false)
                 return // Stop polling
               } else if (progress.status === 'failed') {
-                clearInterval(pollInterval)
+                clearTimeout(pollInterval)
                 if (timeoutId) clearTimeout(timeoutId)
                 setError(progress.error || 'Analysis failed')
                 setAnalyzing(false)
                 return // Stop polling
               }
 
-              // Dynamic polling interval based on progress
-              // Early stages: fast polling (1-2s), later stages: slower polling (3-5s)
-              const baseInterval = progress.currentStep <= 2 ? 1500 : 3000
-              const backoffMultiplier = Math.min(pollCount * 0.1, 2) // Max 2x slowdown
-              const nextInterval = Math.round(baseInterval * (1 + backoffMultiplier))
+              // Smart exponential backoff based on progress stage and poll count
+              let nextInterval: number
+
+              if (progress.currentStep <= 2) {
+                // Early stages (PDF extract, Visual analysis): Fast polling
+                nextInterval = calculateBackoffDelay(Math.min(pollCount - 1, 3), 1000, 2000)
+              } else if (progress.currentStep <= 4) {
+                // Middle stages (Audio, AI synthesis): Medium polling
+                nextInterval = calculateBackoffDelay(Math.min(pollCount - 1, 2), 2000, 5000)
+              } else {
+                // Final stage (Audio generation): Slower polling
+                nextInterval = calculateBackoffDelay(Math.min(pollCount - 1, 1), 3000, 8000)
+              }
 
               // Schedule next poll
               pollInterval = setTimeout(smartPolling, nextInterval)
             } else {
-              // Retry with exponential backoff on error
-              const retryDelay = Math.min(1000 * Math.pow(2, pollCount), 10000) // Max 10s
+              // No progress data received - treat as error
+              consecutiveErrors++
+              console.warn(`No progress data received (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`)
+
+              if (consecutiveErrors >= maxConsecutiveErrors) {
+                clearTimeout(pollInterval)
+                if (timeoutId) clearTimeout(timeoutId)
+                setError('Connection lost - unable to retrieve analysis progress')
+                setAnalyzing(false)
+                return
+              }
+
+              const retryDelay = calculateBackoffDelay(consecutiveErrors - 1, 2000, 15000)
               pollInterval = setTimeout(smartPolling, retryDelay)
             }
           } catch (pollError) {
             console.error('Error polling status:', pollError)
-            pollCount++
+            consecutiveErrors++
+
+            if (consecutiveErrors >= maxConsecutiveErrors) {
+              clearTimeout(pollInterval)
+              if (timeoutId) clearTimeout(timeoutId)
+              setError(`Failed to check analysis progress: ${pollError instanceof Error ? pollError.message : 'Unknown error'}`)
+              setAnalyzing(false)
+              return
+            }
 
             // Retry with exponential backoff
-            const retryDelay = Math.min(1000 * Math.pow(2, pollCount), 10000) // Max 10s
+            const retryDelay = calculateBackoffDelay(consecutiveErrors - 1, 2000, 15000)
             pollInterval = setTimeout(smartPolling, retryDelay)
           }
         }
@@ -207,20 +258,28 @@ export const FilmAnalysisContainer: React.FC = () => {
 
   const getStepIcon = (step: string) => {
     switch (step) {
-      case 'upload': return <Upload className="h-5 w-5" />
-      case 'url': return <Youtube className="h-5 w-5" />
-      case 'analyze': return <Brain className="h-5 w-5" />
-      case 'results': return <CheckCircle className="h-5 w-5" />
+      case 'upload': return <Upload className="h-4 w-4" />
+      case 'url': return <Youtube className="h-4 w-4" />
+      case 'extract': return <FileText className="h-4 w-4" />
+      case 'visual': return <Eye className="h-4 w-4" />
+      case 'audio': return <Mic className="h-4 w-4" />
+      case 'analyze': return <Cog className="h-4 w-4" />
+      case 'generate': return <Volume2 className="h-4 w-4" />
+      case 'results': return <CheckCircle className="h-4 w-4" />
       default: return null
     }
   }
 
   const getStepTitle = (step: string) => {
     switch (step) {
-      case 'upload': return 'Upload Film Synopsis'
+      case 'upload': return 'Upload Synopsis'
       case 'url': return 'Enter Trailer URL'
-      case 'analyze': return 'AI Analysis in Progress'
-      case 'results': return 'Analysis Complete'
+      case 'extract': return 'Extract Text'
+      case 'visual': return 'Visual Analysis'
+      case 'audio': return 'Audio Processing'
+      case 'analyze': return 'AI Synthesis'
+      case 'generate': return 'Generate Audio'
+      case 'results': return 'Complete'
       default: return ''
     }
   }
@@ -250,20 +309,28 @@ export const FilmAnalysisContainer: React.FC = () => {
 
       {/* Progress Steps */}
       <div className="flex justify-center">
-        <div className="flex items-center space-x-4">
-          {['upload', 'url', 'analyze', 'results'].map((step, index) => (
+        <div className="flex items-center space-x-2 flex-wrap justify-center gap-2">
+          {['upload', 'url', 'extract', 'visual', 'audio', 'analyze', 'generate', 'results'].map((step, index) => (
             <React.Fragment key={step}>
-              <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-300 ${
                 currentStep === step
-                  ? 'bg-primary text-primary-foreground'
-                  : index < ['upload', 'url', 'analyze', 'results'].indexOf(currentStep)
-                  ? 'bg-green-100 text-green-800'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : index < ['upload', 'url', 'extract', 'visual', 'audio', 'analyze', 'generate', 'results'].indexOf(currentStep)
+                  ? 'bg-green-100 text-green-800 border border-green-200'
                   : 'bg-muted text-muted-foreground'
               }`}>
-                {getStepIcon(step)}
+                {index < ['upload', 'url', 'extract', 'visual', 'audio', 'analyze', 'generate', 'results'].indexOf(currentStep) ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  getStepIcon(step)
+                )}
                 <span className="text-sm font-medium">{getStepTitle(step)}</span>
               </div>
-              {index < 3 && <div className="w-8 h-px bg-border" />}
+              {index < 7 && <div className={`w-6 h-px transition-colors duration-300 ${
+                index < ['upload', 'url', 'extract', 'visual', 'audio', 'analyze', 'generate', 'results'].indexOf(currentStep)
+                  ? 'bg-green-400'
+                  : 'bg-border'
+              }`} />}
             </React.Fragment>
           ))}
         </div>
@@ -293,7 +360,7 @@ export const FilmAnalysisContainer: React.FC = () => {
         {currentStep === 'upload' && (
           <Card>
             <CardHeader>
-              <CardTitle>Step 1: Upload Film Synopsis</CardTitle>
+              <CardTitle>Upload Film Synopsis</CardTitle>
             </CardHeader>
             <CardContent>
               <FileUploadArea
@@ -308,7 +375,7 @@ export const FilmAnalysisContainer: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>Step 2: Enter Trailer URL</span>
+                <span>Enter Trailer URL</span>
                 <div className="flex items-center space-x-2">
                   {inputType === 'file' && selectedFile && (
                     <Badge variant="secondary" className="text-xs">
@@ -329,11 +396,17 @@ export const FilmAnalysisContainer: React.FC = () => {
           </Card>
         )}
 
-        {currentStep === 'analyze' && isAnalyzing && (
+        {(currentStep === 'extract' || currentStep === 'visual' || currentStep === 'audio' || currentStep === 'analyze' || currentStep === 'generate') && isAnalyzing && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>Step 3: AI Analysis in Progress</span>
+                <span>
+                  {currentStep === 'extract' && 'Extracting Film Synopsis'}
+                  {currentStep === 'visual' && 'Analyzing Visual Elements'}
+                  {currentStep === 'audio' && 'Processing Audio Content'}
+                  {currentStep === 'analyze' && 'Synthesizing AI Analysis'}
+                  {currentStep === 'generate' && 'Generating Audio Briefing'}
+                </span>
                 <div className="text-xs text-muted-foreground text-right">
                   {inputType === 'file' && selectedFile && <div>📄 {selectedFile.name}</div>}
                   {inputType === 'text' && synopsisText && <div>📝 {synopsisText.length} chars</div>}
@@ -344,7 +417,7 @@ export const FilmAnalysisContainer: React.FC = () => {
             <CardContent>
               <AnalysisProgress
                 progress={progress || {
-                  stage: 'analyze',
+                  stage: currentStep,
                   percentage: 0
                 }}
               />

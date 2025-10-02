@@ -2,7 +2,7 @@ import {
   BedrockRuntimeClient,
   InvokeModelCommand
 } from '@aws-sdk/client-bedrock-runtime'
-import type { AIAnalysisResult } from './aiAnalyzer.js'
+import type { AIAnalysisResult, VisualAnalysisResult } from './aiAnalyzer.js'
 
 // Validate required AWS environment variables
 const AWS_REGION = process.env.AWS_REGION
@@ -14,22 +14,38 @@ const bedrockClient = new BedrockRuntimeClient({
   region: AWS_REGION
 })
 
-const MODEL_ID = 'openai.gpt-oss-120b-1:0' // OpenAI gpt-oss-120b via AWS Bedrock
+const MODEL_ID = 'us.deepseek.r1-v1:0' // DeepSeek-R1 inference profile via AWS Bedrock
 
-export async function analyzeWithOpenAI(
+export async function analyzeWithDeepSeek(
   synopsis: string,
+  visualAnalysis: VisualAnalysisResult,
   transcript: string
 ): Promise<AIAnalysisResult> {
   try {
-    console.log('Starting OpenAI analysis via AWS Bedrock')
+    console.log('Starting DeepSeek-R1 synthesis analysis via AWS Bedrock')
 
-    const combinedText = `Film Synopsis:\n${synopsis}\n\nTrailer Transcript:\n${transcript}`
+    const combinedContent = `
+Film Synopsis:
+${synopsis}
+
+Visual Analysis:
+${visualAnalysis.visualAnalysis}
+
+Emotional Tone: ${visualAnalysis.emotionalTone}
+Visual Style: ${visualAnalysis.visualStyle}
+
+Key Timestamps:
+${visualAnalysis.timestamps.map(t => `${t.time}: ${t.description}`).join('\n')}
+
+Transcript:
+${transcript}
+    `.trim()
 
     const prompt = `
-You are an expert film critic and festival selector. Analyze the following film content and provide a comprehensive evaluation.
+You are an expert film critic and festival selector. Analyze the following comprehensive film content that combines synopsis, visual analysis, and transcript data.
 
 CONTENT TO ANALYZE:
-${combinedText}
+${combinedContent}
 
 Please provide a detailed analysis in the following JSON format:
 {
@@ -61,16 +77,14 @@ Guidelines:
 Return ONLY valid JSON, no additional text.
     `.trim()
 
-    // For OpenAI models in AWS Bedrock, use the standard OpenAI format
+    // For DeepSeek-R1 in AWS Bedrock, use specific prompt format with special tokens
+    const formattedPrompt = `<｜begin▁of▁sentence｜><｜User｜>${prompt}<｜Assistant｜><think>\n`
+
     const requestBody = {
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
+      prompt: formattedPrompt,
       max_tokens: 1500,
-      temperature: 0.7
+      temperature: 0.7,
+      top_p: 0.9
     }
 
     const command = new InvokeModelCommand({
@@ -111,36 +125,102 @@ Return ONLY valid JSON, no additional text.
 
     console.log('Extracted analysis text:', analysisText.substring(0, 200) + '...')
 
-    // Parse the JSON response
-    let analysisResult: AIAnalysisResult
+    // Parse the JSON response with robust error handling
+    let analysisResult: AIAnalysisResult | undefined
     try {
       analysisResult = JSON.parse(analysisText)
+      console.log('Successfully parsed JSON response directly')
     } catch (parseError) {
       console.error('Failed to parse JSON response:', parseError)
-      console.error('Raw analysis text:', analysisText)
+      console.error('Raw analysis text:', analysisText.substring(0, 200) + '...')
 
-      // If the model didn't return JSON, try to extract JSON from the response
-      const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        try {
-          analysisResult = JSON.parse(jsonMatch[0])
-          console.log('Successfully extracted JSON from response')
-        } catch (extractError) {
-          throw new Error(`Model returned invalid JSON: ${analysisText.substring(0, 200)}...`)
+      // Handle responses that start with <reasoning> tags
+      let cleanedText = analysisText.trim()
+
+      // Remove reasoning sections if present
+      if (cleanedText.startsWith('<reasoning>')) {
+        const reasoningEnd = cleanedText.indexOf('</reasoning>')
+        if (reasoningEnd !== -1) {
+          cleanedText = cleanedText.substring(reasoningEnd + 13).trim()
+          console.log('Removed reasoning section, remaining text:', cleanedText.substring(0, 200) + '...')
+        }
+      }
+
+      // Try to find JSON content using a simpler approach
+      const jsonStart = cleanedText.indexOf('{')
+      if (jsonStart !== -1) {
+        // Extract everything from the first { to the end
+        const potentialJson = cleanedText.substring(jsonStart)
+
+        // Try to find the matching closing brace by counting braces
+        let braceCount = 0
+        let jsonEnd = -1
+
+        for (let i = 0; i < potentialJson.length; i++) {
+          if (potentialJson[i] === '{') braceCount++
+          else if (potentialJson[i] === '}') {
+            braceCount--
+            if (braceCount === 0) {
+              jsonEnd = i
+              break
+            }
+          }
+        }
+
+        if (jsonEnd !== -1) {
+          const jsonString = potentialJson.substring(0, jsonEnd + 1)
+          console.log('Extracted potential JSON:', jsonString.substring(0, 300) + '...')
+
+          try {
+            const parsedData = JSON.parse(jsonString)
+
+            // Check if it has the expected structure
+            if (parsedData.scores && parsedData.insights) {
+              analysisResult = parsedData
+              console.log('Successfully parsed complete JSON structure')
+            } else if (parsedData.overall !== undefined && parsedData.genre !== undefined && parsedData.insights) {
+              // Handle malformed response where scores are at root level
+              console.log('Detected malformed response structure, restructuring scores...')
+              analysisResult = {
+                scores: {
+                  overall: parsedData.overall,
+                  genre: parsedData.genre,
+                  theme: parsedData.theme,
+                  targetAudience: parsedData.targetAudience,
+                  technicalQuality: parsedData.technicalQuality,
+                  emotionalImpact: parsedData.emotionalImpact
+                },
+                insights: parsedData.insights,
+                aiModel: 'deepseek'
+              }
+              console.log('Successfully restructured and parsed malformed JSON')
+            } else {
+              throw new Error('Parsed JSON does not have expected structure')
+            }
+          } catch (jsonError: any) {
+            console.error('Failed to parse extracted JSON:', jsonError.message)
+            throw new Error(`JSON parsing failed: ${jsonError.message}`)
+          }
+        } else {
+          throw new Error('Could not find matching closing brace for JSON')
         }
       } else {
-        throw new Error(`Model did not return valid JSON: ${analysisText.substring(0, 200)}...`)
+        throw new Error(`No JSON opening brace found in response: ${cleanedText.substring(0, 200)}...`)
       }
+    }
+
+    if (!analysisResult) {
+      throw new Error('Failed to parse analysis result from model response')
     }
 
     return {
       scores: analysisResult.scores,
       insights: analysisResult.insights,
-      aiModel: 'openai'
+      aiModel: 'deepseek'
     }
 
   } catch (error) {
-    console.error('Error in OpenAI analysis:', error)
+    console.error('Error in DeepSeek-R1 analysis:', error)
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
@@ -157,6 +237,6 @@ Return ONLY valid JSON, no additional text.
       throw new Error('Invalid request to AWS Bedrock. Please check model configuration')
     }
 
-    throw new Error(`OpenAI analysis failed: ${errorMessage}`)
+    throw new Error(`DeepSeek-R1 analysis failed: ${errorMessage}`)
   }
 }

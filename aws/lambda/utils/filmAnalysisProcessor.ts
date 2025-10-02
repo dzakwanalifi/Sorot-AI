@@ -1,7 +1,7 @@
 import { extractTextFromPDF } from './pdfProcessor.js'
 import { downloadVideoAudio } from './videoDownloader.js'
 import { transcribeAudio } from './transcribeService.js'
-import { analyzeFilmContent } from './aiAnalyzer.js'
+import { analyzeFilmContent, analyzeFilmVisually } from './aiAnalyzer.js'
 import { generateAudioBriefing } from './audioGenerator.js'
 import type { FilmAnalysis } from '../types/analysis.js'
 
@@ -40,33 +40,41 @@ export async function processFilmAnalysis(
     console.log(`Extracted ${synopsis.length} characters from ${inputType === 'text' ? 'text input' : 'PDF'}`)
     onProgress?.(1, 'Extracting Synopsis', 40)
 
-    // Step 2: Download video audio
-    onProgress?.(2, 'Downloading Trailer', 50)
-    console.log('Step 2: Downloading video audio...')
-    const audioPath = await downloadVideoAudio(trailerUrl)
-    console.log('Audio downloaded successfully')
-    onProgress?.(2, 'Downloading Trailer', 70)
-
-    // Step 3: Audio transcription
-    onProgress?.(3, 'Transcribing Audio', 75)
-    console.log('Step 3: Attempting audio transcription...')
+    // Step 2: Gemini Visual Analysis (MANDATORY)
+    onProgress?.(2, 'Visual Analysis', 50)
+    console.log('Step 2: Running Gemini visual analysis...')
+    let visualAnalysis
     try {
-      transcript = await transcribeAudio(audioPath)
-      console.log(`Transcription completed: ${transcript.length} characters`)
-      onProgress?.(3, 'Transcribing Audio', 85)
-    } catch (transcribeError) {
-      const errorMessage = transcribeError instanceof Error ? transcribeError.message : 'Unknown transcription error'
-      console.warn('Transcription failed:', errorMessage)
-      console.log('Using fallback transcript for visual analysis only')
-      transcript = 'Audio transcription unavailable. Using visual analysis only.'
-      onProgress?.(3, 'Transcribing Audio', 85)
+      visualAnalysis = await analyzeFilmVisually(trailerUrl)
+      console.log('Visual analysis completed successfully')
+      onProgress?.(2, 'Visual Analysis', 70)
+    } catch (visualError) {
+      const errorMessage = visualError instanceof Error ? visualError.message : 'Unknown visual analysis error'
+      console.error('Visual analysis failed:', errorMessage)
+      throw new Error(`Visual analysis failed: ${errorMessage}`)
     }
 
-    // Step 4: AI Analysis
-    onProgress?.(4, 'AI Analysis', 90)
-    console.log('Step 4: Running AI analysis...')
-    const analysisResult = await analyzeFilmContent(synopsis, transcript, trailerUrl)
-    onProgress?.(4, 'AI Analysis', 95)
+    // Step 3: Audio Processing (OPTIONAL - for additional context)
+    onProgress?.(3, 'Audio Enhancement', 75)
+    console.log('Step 3: Attempting audio transcription for additional context...')
+    let audioPath: string | null = null
+    try {
+      audioPath = await downloadVideoAudio(trailerUrl)
+      transcript = await transcribeAudio(audioPath)
+      console.log(`Transcription completed: ${transcript.length} characters`)
+      onProgress?.(3, 'Audio Enhancement', 85)
+    } catch (audioError) {
+      const errorMessage = audioError instanceof Error ? audioError.message : 'Unknown audio processing error'
+      console.warn('Audio processing failed, proceeding with visual analysis only:', errorMessage)
+      transcript = null
+      onProgress?.(3, 'Audio Enhancement', 85)
+    }
+
+    // Step 4: AI Synthesis (Combine Visual + Audio)
+    onProgress?.(4, 'AI Synthesis', 90)
+    console.log('Step 4: Running AI synthesis with combined visual and audio data...')
+    const analysisResult = await analyzeFilmContent(synopsis, visualAnalysis, transcript)
+    onProgress?.(4, 'AI Synthesis', 95)
 
     // Step 5: Generate audio briefing
     onProgress?.(5, 'Generating Audio Brief', 98)
@@ -134,6 +142,20 @@ export async function processFilmAnalysis(
       resultScoresKeys: result.scores ? Object.keys(result.scores) : 'no scores',
       resultOverallScore: result.scores?.overall
     })
+
+    // Clean up temp audio file if it was downloaded
+    if (audioPath) {
+      try {
+        const fs = await import('fs/promises')
+        await fs.access(audioPath)
+        await fs.unlink(audioPath)
+        console.log(`Cleaned up temp audio file after successful processing: ${audioPath}`)
+      } catch (cleanupError: any) {
+        if (cleanupError.code !== 'ENOENT') {
+          console.warn('Failed to clean up temp audio file:', cleanupError.message)
+        }
+      }
+    }
 
     return result
 

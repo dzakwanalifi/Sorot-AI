@@ -1,6 +1,7 @@
 import { createServer, IncomingMessage, ServerResponse } from 'http'
 import { handler as analyzeHandler } from './handlers/analyze-film.js'
 import { handler as statusHandler } from './handlers/analysis-status.js'
+import { startLoggingContext, logInfo, logError } from './utils/logger.js'
 
 // AWS Lambda types
 interface APIGatewayProxyEvent {
@@ -29,8 +30,8 @@ interface Context {
   awsRequestId: string
   logGroupName: string
   logStreamName: string
-  identity?: any
-  clientContext?: any
+  identity?: unknown
+  clientContext?: unknown
   getRemainingTimeInMillis: () => number
   done: () => void
   fail: () => void
@@ -43,6 +44,12 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     // Parse request
     const url = new URL(req.url || '', `http://${req.headers.host}`)
     const method = req.method || 'GET'
+
+    // Start logging context for this request
+    const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    startLoggingContext(requestId)
+
+    logInfo(`Incoming ${method} request to ${url.pathname}`)
 
     // Collect request body
     let body = ''
@@ -63,7 +70,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
       ),
       body: body || null,
       requestContext: {
-        requestId: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        requestId: requestId
       }
     }
 
@@ -117,7 +124,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     }
 
   } catch (error) {
-    console.error('Server error:', error)
+    logError('Server error occurred', error instanceof Error ? error : new Error(String(error)))
     res.statusCode = 500
     res.setHeader('Content-Type', 'application/json')
     res.end(JSON.stringify({ error: 'Internal server error' }))
