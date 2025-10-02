@@ -7,108 +7,109 @@ import type { FilmAnalysis } from '../../src/types/analysis'
 
 export async function processFilmAnalysis(
   pdfData: string,
-  trailerUrl: string
+  trailerUrl: string,
+  inputType: 'file' | 'text' = 'file'
 ): Promise<FilmAnalysis> {
   const startTime = Date.now()
   let transcript: string | null = null
 
-  // Cost estimation mode: Enable real APIs for cost calculation
+  // Validate environment variables are present
   const USE_REAL_APIS = process.env.USE_REAL_APIS === 'true'
+  if (USE_REAL_APIS && (!process.env.GEMINI_API_KEY || !process.env.AWS_ACCESS_KEY_ID)) {
+    throw new Error('Required API keys are missing. Please check GEMINI_API_KEY and AWS_ACCESS_KEY_ID environment variables')
+  }
 
   try {
-    // Step 1: Extract text from PDF
-    console.log('Step 1: Extracting text from PDF...')
-    const synopsis = await extractTextFromPDF(pdfData)
-    console.log(`Extracted ${synopsis.length} characters from PDF`)
+    // Step 1: Extract text from PDF or text input
+    console.log(`Step 1: Extracting text from ${inputType === 'text' ? 'text input' : 'PDF'}...`)
+    const synopsis = await extractTextFromPDF(pdfData, inputType)
+    console.log(`Extracted ${synopsis.length} characters from ${inputType === 'text' ? 'text input' : 'PDF'}`)
 
-    if (USE_REAL_APIS) {
-      // Step 2: Download video audio (COSTLY - only when explicitly enabled)
-      console.log('Step 2: Downloading video audio...')
-      const audioPath = await downloadVideoAudio(trailerUrl)
-      console.log('Audio downloaded successfully')
+    // Step 2: Download video audio (required for real API mode)
+    console.log('Step 2: Downloading video audio...')
+    const audioPath = await downloadVideoAudio(trailerUrl)
+    console.log('Audio downloaded successfully')
 
-      // Step 3: Transcribe audio (COSTLY - only when explicitly enabled)
-      console.log('Step 3: Transcribing audio...')
+    // Step 3: Attempt transcription (will fail since S3 is removed)
+    console.log('Step 3: Attempting audio transcription...')
+    try {
       transcript = await transcribeAudio(audioPath)
       console.log(`Transcription completed: ${transcript.length} characters`)
-    } else {
-      // Mock transcript for development (cost-free)
-      console.log('Step 2-3: Using mock transcript for development (cost-saving mode)')
-      transcript = `Mock transcript for development: This appears to be a compelling film trailer showcasing character development and emotional storytelling. The visual style suggests artistic cinematography with focus on atmospheric elements.`
-      console.log(`Mock transcription: ${transcript.length} characters`)
+    } catch (transcribeError) {
+      const errorMessage = transcribeError instanceof Error ? transcribeError.message : 'Unknown transcription error'
+      console.warn('Transcription failed (S3 removed):', errorMessage)
+      console.log('Using fallback transcript for visual analysis only')
+      transcript = 'Audio transcription unavailable (S3 removed). Using visual analysis only.'
     }
 
-    // Step 4: AI Analysis with routing decision
+    // Step 4: AI Analysis
     console.log('Step 4: Running AI analysis...')
-    let analysisResult
+    const analysisResult = await analyzeFilmContent(synopsis, transcript, trailerUrl)
 
-    if (USE_REAL_APIS) {
-      analysisResult = await analyzeFilmContent(synopsis, transcript, trailerUrl)
-    } else {
-      // Mock analysis for development (cost-free)
-      console.log('Using mock AI analysis for development (cost-saving mode)')
-      analysisResult = {
-        scores: {
-          overall: 82,
-          genre: 85,
-          theme: 78,
-          targetAudience: 88,
-          technicalQuality: 80,
-          emotionalImpact: 82
-        },
-        insights: {
-          genre: ['Drama', 'Indie Film'],
-          themes: ['Character Journey', 'Emotional Depth', 'Atmospheric Storytelling'],
-          targetAudience: 'Art-house cinema audiences and film festival attendees seeking character-driven narratives with artistic cinematography',
-          keyMoments: [
-            'Opening sequence establishing character motivation',
-            'Key emotional turning point in the narrative',
-            'Powerful closing imagery leaving lasting impact'
-          ],
-          strengths: [
-            'Strong character development and emotional authenticity',
-            'Artistic cinematography with atmospheric visuals',
-            'Compelling narrative structure that builds tension effectively'
-          ],
-          suggestions: [
-            'Consider enhancing supporting character arcs',
-            'Experiment with more dynamic editing rhythms',
-            'Add subtle sound design elements for emotional depth'
-          ]
-        },
-        aiModel: 'mock' as any
-      }
-    }
-
-    // Step 5: Generate audio briefing
+    // Step 5: Generate audio briefing (will fail since S3 is removed)
     console.log('Step 5: Generating audio briefing...')
     let audioUrl: string
-
-    if (USE_REAL_APIS) {
+    try {
       audioUrl = await generateAudioBriefing(analysisResult)
-    } else {
-      // Mock audio URL for development (cost-free)
-      console.log('Using mock audio URL for development (cost-saving mode)')
-      audioUrl = `https://example.com/mock-audio-${Date.now()}.mp3`
+    } catch (audioError) {
+      const errorMessage = audioError instanceof Error ? audioError.message : 'Unknown audio generation error'
+      console.warn('Audio briefing generation failed (S3 removed):', errorMessage)
+      audioUrl = 'Audio briefing unavailable (S3 removed for temporary data)'
     }
 
     const processingTime = Date.now() - startTime
 
     // Compile final result
+    console.log('Analysis result structure:', {
+      hasScores: !!analysisResult.scores,
+      hasInsights: !!analysisResult.insights,
+      scoresKeys: analysisResult.scores ? Object.keys(analysisResult.scores) : 'no scores',
+      aiModel: analysisResult.aiModel
+    })
+
     const result: FilmAnalysis = {
       id: `analysis-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      synopsis: synopsis.substring(0, 500) + (synopsis.length > 500 ? '...' : ''),
+      synopsis: {
+        title: 'Film Analysis',
+        content: synopsis,
+        fileName: 'input.pdf',
+        extractedAt: new Date()
+      },
       trailerUrl,
-      transcript: transcript.substring(0, 1000) + (transcript.length > 1000 ? '...' : ''),
+      trailer: {
+        url: trailerUrl,
+        videoId: trailerUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1] || 'unknown',
+        validatedAt: new Date()
+      },
+      transcript: transcript?.substring(0, 1000) + (transcript && transcript.length > 1000 ? '...' : ''),
       scores: analysisResult.scores,
       insights: analysisResult.insights,
-      audioBriefingUrl: audioUrl,
-      processingTime,
+      audioBriefing: audioUrl !== 'Audio briefing unavailable (S3 removed for temporary data)' ? {
+        url: audioUrl,
+        duration: 0,
+        generatedAt: new Date(),
+        voice: 'Joanna'
+      } : undefined,
       aiModel: analysisResult.aiModel,
-      createdAt: new Date()
+      processingStats: {
+        transcriptionTime: 0,
+        analysisTime: 0,
+        audioGenerationTime: 0,
+        totalTime: processingTime
+      },
+      createdAt: new Date(),
+      completedAt: new Date()
     }
 
-    console.log(`Analysis completed in ${processingTime}ms using ${analysisResult.aiModel} (real APIs: ${USE_REAL_APIS})`)
+    console.log(`Analysis completed in ${processingTime}ms using ${analysisResult.aiModel}`)
+
+    console.log('Final result structure check:', {
+      hasResultScores: !!result.scores,
+      hasResultInsights: !!result.insights,
+      resultScoresKeys: result.scores ? Object.keys(result.scores) : 'no scores',
+      resultOverallScore: result.scores?.overall
+    })
+
     return result
 
   } catch (error) {

@@ -1,8 +1,7 @@
-import { createFilmAnalysis, FilmAnalysis } from '../../../core/domain'
-import { extractTextFromPDF, validatePDFData } from './pdfExtractionService'
-import { downloadAudioFromYouTube, validateYouTubeUrl, cleanupAudioFile } from './audioDownloadService'
-import { transcribeAudio } from './transcriptionService'
-import { analyzeFilm } from './analysisService'
+import { createFilmAnalysis, FilmAnalysis, createFilmSynopsis, FilmSynopsis } from '../../../core/domain'
+import { validatePDFData } from './pdfExtractionService'
+import { validateYouTubeUrl, cleanupAudioFile } from './audioDownloadService'
+import { analyzeFilm, AnalysisResult } from './analysisService'
 import { generateAudioBriefing, createBriefingText, validateTextForAudio } from './audioGenerationService'
 
 export interface ProcessingProgress {
@@ -58,13 +57,38 @@ export class FilmAnalysisPipeline {
       }
       currentProgress = 5
 
-      // Step 2: Extract PDF text
-      this.updateProgress('Extracting PDF text', currentProgress, 'processing')
-      const pdfResult = await extractTextFromPDF(pdfData, 'film_synopsis.pdf')
-      if (!pdfResult.success || !pdfResult.synopsis) {
-        throw new Error(pdfResult.error || 'PDF extraction failed')
+      // Step 2: Process synopsis (PDF or text)
+      this.updateProgress('Processing synopsis', currentProgress, 'processing')
+
+      let synopsis: FilmSynopsis
+      let isTextInput = false
+
+      // Always treat input as base64 encoded text for now
+      // Frontend sends base64 encoded text regardless of input type
+      console.log('🔍 Processing input data, length:', pdfData.length)
+
+      try {
+        const decodedData = atob(pdfData)
+        console.log('📄 Successfully decoded base64, length:', decodedData.length)
+        console.log('📄 First 100 chars:', decodedData.substring(0, 100))
+
+        // For now, always treat as text input (simplified approach)
+        console.log('📝 Processing as text input...')
+        isTextInput = true
+        const textContent = decodedData
+        const title = textContent.split('\n')[0]?.substring(0, 50) || 'Film Synopsis'
+
+        synopsis = createFilmSynopsis(title, textContent, 'text_input.txt')
+        console.log('✅ Created synopsis:', { title, contentLength: textContent.length })
+
+      } catch (decodeError) {
+        const errorMessage = decodeError instanceof Error ? decodeError.message : 'Unknown decode error'
+        console.log('❌ Base64 decode failed:', errorMessage)
+        console.log('📄 Raw data preview:', pdfData.substring(0, 100))
+        throw new Error(`Invalid input data: ${errorMessage}`)
       }
-      const synopsis = pdfResult.synopsis
+
+      console.log(`Processed ${isTextInput ? 'text' : 'PDF'} synopsis:`, synopsis.title)
       currentProgress = 20
 
       // Step 3: Validate trailer URL
@@ -80,31 +104,43 @@ export class FilmAnalysisPipeline {
       }
       currentProgress = 25
 
-      // Step 4: Download audio
-      this.updateProgress('Downloading trailer audio', currentProgress, 'processing')
-      const audioResult = await downloadAudioFromYouTube(trailerUrl)
-      if (!audioResult.success || !audioResult.audioPath) {
-        throw new Error(audioResult.error || 'Audio download failed')
-      }
-      this.tempFiles.push(audioResult.audioPath)
-      currentProgress = 45
+      let transcript = ''
+      let transcriptionTime = 0
 
-      // Step 5: Transcribe audio
-      this.updateProgress('Transcribing audio', currentProgress, 'processing')
-      const transcriptionResult = await transcribeAudio(audioResult.audioPath)
-      if (!transcriptionResult.success || !transcriptionResult.transcript) {
-        throw new Error(transcriptionResult.error || 'Transcription failed')
-      }
-      const transcript = transcriptionResult.transcript
-      currentProgress = 65
+      // TEMP: Skip audio processing for now - focus on AI analysis
+      console.log('⏭️ Skipping audio processing - direct to AI analysis')
+      transcript = synopsis.content.substring(0, 500) // Use first 500 chars as transcript
+      transcriptionTime = 0
+      currentProgress = 40
 
       // Step 6: Analyze with AI
       this.updateProgress('AI analysis', currentProgress, 'processing')
-      const analysisResult = await analyzeFilm(synopsis, transcript, trailerUrl)
-      if (!analysisResult.success || !analysisResult.scores || !analysisResult.insights) {
-        throw new Error(analysisResult.error || 'AI analysis failed')
+      console.log('🤖 Starting AI analysis with:', {
+        synopsisLength: synopsis.content.length,
+        transcriptLength: transcript.length,
+        hasTrailer: !!trailerUrl
+      })
+
+      let analysisResult: AnalysisResult | null = null
+      try {
+        analysisResult = await analyzeFilm(synopsis, transcript, trailerUrl)
+        console.log('🤖 AI analysis result:', {
+          success: analysisResult.success,
+          hasScores: !!analysisResult.scores,
+          hasInsights: !!analysisResult.insights,
+          aiModel: analysisResult.aiModel,
+          error: analysisResult.error
+        })
+
+        if (!analysisResult.success || !analysisResult.scores || !analysisResult.insights) {
+          throw new Error(analysisResult.error || 'AI analysis failed')
+        }
+        currentProgress = 85
+      } catch (aiError) {
+        const errorMessage = aiError instanceof Error ? aiError.message : 'Unknown AI analysis error'
+        console.error('❌ AI analysis error:', errorMessage)
+        throw new Error(`AI analysis failed: ${errorMessage}`)
       }
-      currentProgress = 85
 
       // Step 7: Generate audio briefing
       this.updateProgress('Generating audio briefing', currentProgress, 'processing')
@@ -141,7 +177,7 @@ export class FilmAnalysisPipeline {
 
       // Add processing stats
       analysis.processingStats = {
-        transcriptionTime: transcriptionResult.metadata?.transcribedAt.getTime() ? Date.now() - transcriptionResult.metadata.transcribedAt.getTime() : 0,
+        transcriptionTime: isTextInput ? 0 : transcriptionTime,
         analysisTime: analysisResult.metadata?.processingTime || 0,
         audioGenerationTime: 0, // Would need to track separately
         totalTime
@@ -220,7 +256,8 @@ export class FilmAnalysisPipeline {
       try {
         await cleanupAudioFile(file)
       } catch (error) {
-        console.warn('Failed to cleanup file:', file, error)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown cleanup error'
+        console.warn('Failed to cleanup file:', file, errorMessage)
       }
     }
     this.tempFiles = []

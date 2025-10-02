@@ -35,7 +35,7 @@ export async function extractTextFromPDF(
 
     // Handle the result structure - text can be string or string array
     let fullText: string
-    const textData = (result as any).text
+    const textData = (result as { text: string | string[] }).text
 
     if (typeof textData === 'string') {
       fullText = textData

@@ -4,8 +4,14 @@ import {
 } from '@aws-sdk/client-bedrock-runtime'
 import type { AIAnalysisResult } from './aiAnalyzer'
 
+// Validate required AWS environment variables
+const AWS_REGION = process.env.AWS_REGION
+if (!AWS_REGION) {
+  throw new Error('AWS_REGION environment variable is required but not set')
+}
+
 const bedrockClient = new BedrockRuntimeClient({
-  region: process.env.AWS_REGION || 'us-east-1'
+  region: AWS_REGION
 })
 
 const MODEL_ID = 'openai.gpt-oss-120b-1:0' // OpenAI gpt-oss-120b via AWS Bedrock
@@ -55,6 +61,7 @@ Guidelines:
 Return ONLY valid JSON, no additional text.
     `.trim()
 
+    // For OpenAI models in AWS Bedrock, use the standard OpenAI format
     const requestBody = {
       messages: [
         {
@@ -76,13 +83,55 @@ Return ONLY valid JSON, no additional text.
     console.log('Sending request to Bedrock...')
     const response = await bedrockClient.send(command)
 
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-    const analysisText = responseBody.choices[0].message.content
+    console.log('Raw response received from Bedrock')
+    const responseText = new TextDecoder().decode(response.body)
+    console.log('Response body:', responseText.substring(0, 500) + '...')
 
-    console.log('Received response from OpenAI')
+    const responseBody = JSON.parse(responseText)
+
+    // For OpenAI models in Bedrock, the response format may vary
+    let analysisText: string
+
+    if (responseBody.choices && responseBody.choices[0]) {
+      // Standard OpenAI format
+      analysisText = responseBody.choices[0].message?.content || responseBody.choices[0].text || ''
+    } else if (responseBody.completions && responseBody.completions[0]) {
+      // Alternative format
+      analysisText = responseBody.completions[0].data?.text || responseBody.completions[0].text || ''
+    } else if (responseBody.text) {
+      // Direct text response
+      analysisText = responseBody.text
+    } else if (responseBody.content) {
+      // Content field
+      analysisText = responseBody.content
+    } else {
+      // Fallback to raw response
+      analysisText = responseText
+    }
+
+    console.log('Extracted analysis text:', analysisText.substring(0, 200) + '...')
 
     // Parse the JSON response
-    const analysisResult = JSON.parse(analysisText)
+    let analysisResult: any
+    try {
+      analysisResult = JSON.parse(analysisText)
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', parseError)
+      console.error('Raw analysis text:', analysisText)
+
+      // If the model didn't return JSON, try to extract JSON from the response
+      const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        try {
+          analysisResult = JSON.parse(jsonMatch[0])
+          console.log('Successfully extracted JSON from response')
+        } catch (extractError) {
+          throw new Error(`Model returned invalid JSON: ${analysisText.substring(0, 200)}...`)
+        }
+      } else {
+        throw new Error(`Model did not return valid JSON: ${analysisText.substring(0, 200)}...`)
+      }
+    }
 
     return {
       scores: analysisResult.scores,
@@ -93,39 +142,21 @@ Return ONLY valid JSON, no additional text.
   } catch (error) {
     console.error('Error in OpenAI analysis:', error)
 
-    // Return mock result for development/demo
-    console.log('Returning mock analysis result')
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
-    return {
-      scores: {
-        overall: 85,
-        genre: 88,
-        theme: 82,
-        targetAudience: 90,
-        technicalQuality: 80,
-        emotionalImpact: 85
-      },
-      insights: {
-        genre: ['Drama', 'Thriller'],
-        themes: ['Identity', 'Redemption', 'Human Connection'],
-        targetAudience: 'Adults 25-45 years old interested in character-driven stories with psychological depth',
-        keyMoments: [
-          'Opening scene establishing the protagonist\'s internal conflict',
-          'Mid-film revelation that changes the narrative direction',
-          'Climactic confrontation showing character growth'
-        ],
-        strengths: [
-          'Strong character development and emotional depth',
-          'Compelling narrative structure with good pacing',
-          'Effective use of cinematography and sound design'
-        ],
-        suggestions: [
-          'Consider tightening the second act pacing',
-          'Enhance supporting character development',
-          'Add more visual metaphors for thematic elements'
-        ]
-      },
-      aiModel: 'openai'
+    // Provide specific error messages for common issues
+    if (errorMessage.includes('credentials')) {
+      throw new Error('AWS credentials not configured properly')
     }
+
+    if (errorMessage.includes('Access Denied')) {
+      throw new Error('Access denied to AWS Bedrock. Please check IAM permissions')
+    }
+
+    if (errorMessage.includes('ValidationException')) {
+      throw new Error('Invalid request to AWS Bedrock. Please check model configuration')
+    }
+
+    throw new Error(`OpenAI analysis failed: ${errorMessage}`)
   }
 }

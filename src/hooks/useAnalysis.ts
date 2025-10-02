@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react'
+import { FilmAnalysis } from '@/types/analysis'
 
 export interface AnalysisState {
   isAnalyzing: boolean
   progress: number
   currentStep: string
   error: string | null
-  results: any | null
+  results: FilmAnalysis | null
 }
 
 export const useAnalysis = () => {
@@ -44,7 +45,7 @@ export const useAnalysis = () => {
     }))
   }, [])
 
-  const setResults = useCallback((results: any) => {
+  const setResults = useCallback((results: FilmAnalysis) => {
     setAnalysisState(prev => ({
       ...prev,
       isAnalyzing: false,

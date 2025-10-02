@@ -96,7 +96,9 @@ export async function downloadAudioFromYouTube(
       // Cleanup temp file if it exists
       try {
         await fs.unlink(tempPath)
-      } catch {}
+      } catch {
+        // Ignore cleanup errors
+      }
 
       throw new Error('Audio download failed: file not created properly')
     }

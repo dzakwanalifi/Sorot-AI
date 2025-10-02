@@ -29,7 +29,14 @@ export default defineConfig({
     sourcemap: true,
   },
   server: {
-    port: 3000,
+    port: 5174,
     host: true,
+    proxy: {
+      '/.netlify/functions': {
+        target: 'http://localhost:8888',
+        changeOrigin: true,
+        rewrite: (path) => path,
+      },
+    },
   },
 })

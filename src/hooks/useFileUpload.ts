@@ -24,7 +24,7 @@ export const useFileUpload = () => {
     }
 
     // Check file type
-    if (!UPLOAD_CONFIG.ALLOWED_FILE_TYPES.includes(file.type as any)) {
+    if (!(UPLOAD_CONFIG.ALLOWED_FILE_TYPES as readonly string[]).includes(file.type)) {
       return {
         isValid: false,
         error: ERROR_MESSAGES.INVALID_FILE_TYPE,

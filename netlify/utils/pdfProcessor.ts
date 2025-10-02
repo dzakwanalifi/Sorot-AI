@@ -1,7 +1,15 @@
 import { extractText } from 'unpdf'
 
-export async function extractTextFromPDF(pdfData: string): Promise<string> {
+export async function extractTextFromPDF(pdfData: string, inputType: 'file' | 'text' = 'file'): Promise<string> {
   try {
+    if (inputType === 'text') {
+      // For text input, just decode base64 and return
+      const decodedText = atob(pdfData)
+      console.log(`Processing text input of size: ${decodedText.length}`)
+      return decodedText
+    }
+
+    // For file input, process as PDF
     // Convert base64 to Uint8Array
     const pdfBuffer = Buffer.from(pdfData, 'base64')
 
@@ -32,17 +40,21 @@ export async function extractTextFromPDF(pdfData: string): Promise<string> {
     return cleanedText
 
   } catch (error) {
-    console.error('Error extracting text from PDF:', error)
+    console.error(`Error extracting text from ${inputType === 'text' ? 'text input' : 'PDF'}:`, error)
 
     const err = error as Error
-    if (err.message?.includes('Invalid PDF')) {
-      throw new Error('Invalid PDF file format')
-    }
+    if (inputType === 'file') {
+      if (err.message?.includes('Invalid PDF')) {
+        throw new Error('Invalid PDF file format')
+      }
 
-    if (err.message?.includes('Encrypted PDF')) {
-      throw new Error('PDF is password-protected and cannot be processed')
-    }
+      if (err.message?.includes('Encrypted PDF')) {
+        throw new Error('PDF is password-protected and cannot be processed')
+      }
 
-    throw new Error(`Failed to extract text from PDF: ${err.message}`)
+      throw new Error(`Failed to extract text from PDF: ${err.message}`)
+    } else {
+      throw new Error(`Failed to process text input: ${err.message}`)
+    }
   }
 }

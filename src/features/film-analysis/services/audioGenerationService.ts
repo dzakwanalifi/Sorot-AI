@@ -2,6 +2,7 @@ import { PollyClient, SynthesizeSpeechCommand, DescribeVoicesCommand } from '@aw
 import { promises as fs } from 'fs'
 import path from 'path'
 import { ERROR_MESSAGES } from '../../../constants'
+import { AnalysisScores, AnalysisInsights } from '../../../core/domain'
 
 export interface AudioGenerationResult {
   success: boolean
@@ -21,7 +22,7 @@ export interface AudioGenerationResult {
 export async function generateAudioBriefing(
   text: string,
   outputDir: string = './temp',
-  voiceId: string = 'Joanna'
+  voiceId: 'Joanna' | 'Matthew' | 'Ivy' | 'Justin' | 'Kendra' | 'Kimberly' | 'Salli' | 'Joey' | 'Ruth' | 'Stephen' = 'Joanna'
 ): Promise<AudioGenerationResult> {
   try {
     console.log('🔊 Starting audio briefing generation...', { voiceId, textLength: text.length })
@@ -47,7 +48,7 @@ export async function generateAudioBriefing(
     // Generate speech
     const command = new SynthesizeSpeechCommand({
       Text: text,
-      VoiceId: voiceId as any,
+      VoiceId: voiceId as 'Joanna' | 'Matthew' | 'Ivy' | 'Justin' | 'Kendra' | 'Kimberly' | 'Salli' | 'Joey' | 'Ruth' | 'Stephen',
       Engine: 'neural', // Use neural engine for better quality
       OutputFormat: 'mp3',
       TextType: 'text'
@@ -100,7 +101,7 @@ export async function generateAudioBriefing(
 /**
  * Get available Polly voices
  */
-export async function getAvailableVoices(languageCode: string = 'en-US'): Promise<string[]> {
+export async function getAvailableVoices(languageCode: 'en-US' | 'en-GB' | 'es-US' | 'fr-FR' | 'de-DE' = 'en-US'): Promise<string[]> {
   try {
     const client = new PollyClient({
       region: process.env.AWS_REGION,
@@ -111,7 +112,7 @@ export async function getAvailableVoices(languageCode: string = 'en-US'): Promis
     })
 
     const command = new DescribeVoicesCommand({
-      LanguageCode: languageCode as any
+      LanguageCode: languageCode as 'en-US' | 'en-GB' | 'es-US' | 'fr-FR' | 'de-DE'
     })
 
     const response = await client.send(command)
@@ -129,8 +130,8 @@ export async function getAvailableVoices(languageCode: string = 'en-US'): Promis
  */
 export function createBriefingText(
   title: string,
-  scores: any,
-  insights: any,
+  scores: AnalysisScores,
+  insights: AnalysisInsights,
   aiModel: string
 ): string {
   const { overall, genre, theme, targetAudience, technicalQuality, emotionalImpact } = scores

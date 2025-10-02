@@ -2,7 +2,7 @@
 
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: (import.meta as any).env?.PROD
+  BASE_URL: ((import.meta as any).env?.PROD)
     ? 'https://sorot-ai.netlify.app'
     : 'http://localhost:5173',
   FUNCTIONS_BASE: '/.netlify/functions',

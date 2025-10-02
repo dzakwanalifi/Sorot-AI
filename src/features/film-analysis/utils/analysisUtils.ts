@@ -1,4 +1,4 @@
-import { AnalysisScores } from '../../../core/domain'
+import { AnalysisScores, AnalysisInsights } from '../../../core/domain'
 
 /**
  * Calculate weighted overall score
@@ -45,7 +45,7 @@ export function getScoreCategory(score: number): {
 /**
  * Format analysis insights for display
  */
-export function formatInsights(insights: any): {
+export function formatInsights(insights: AnalysisInsights): {
   genres: string[]
   themes: string[]
   targetAudience: string
@@ -108,7 +108,12 @@ export function meetsFestivalStandards(scores: AnalysisScores): {
 /**
  * Calculate processing time breakdown
  */
-export function formatProcessingTime(stats: any): {
+export function formatProcessingTime(stats: {
+  transcriptionTime: number
+  analysisTime: number
+  audioGenerationTime: number
+  totalTime: number
+}): {
   transcription: string
   analysis: string
   audio: string

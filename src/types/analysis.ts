@@ -1,8 +1,18 @@
 export interface FilmAnalysis {
   id: string
-  title?: string
-  synopsis: string
+  synopsis: {
+    title: string
+    content: string
+    fileName: string
+    extractedAt: Date
+  }
   trailerUrl: string
+  trailer: {
+    url: string
+    videoId: string
+    duration?: number
+    validatedAt: Date
+  }
   transcript?: string
   scores: {
     overall: number
@@ -20,10 +30,21 @@ export interface FilmAnalysis {
     strengths: string[]
     suggestions: string[]
   }
-  audioBriefingUrl?: string
-  processingTime: number
+  audioBriefing?: {
+    url: string
+    duration: number
+    generatedAt: Date
+    voice: string
+  }
   aiModel: 'openai' | 'gemini'
+  processingStats: {
+    transcriptionTime: number
+    analysisTime: number
+    audioGenerationTime: number
+    totalTime: number
+  }
   createdAt: Date
+  completedAt: Date
 }
 
 export interface AnalysisState {

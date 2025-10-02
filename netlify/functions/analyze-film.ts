@@ -31,7 +31,7 @@ export const handler: Handler = async (event) => {
   try {
     // Parse request body
     const body = JSON.parse(event.body || '{}')
-    const { pdfData, trailerUrl } = body
+    const { pdfData, trailerUrl, inputType = 'file' } = body
 
     // Validate required fields
     if (!pdfData || !trailerUrl) {
@@ -56,17 +56,37 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    // Process the film analysis
-    console.log('Starting film analysis for:', { trailerUrl, pdfSize: pdfData.length })
+    // Process film analysis using real AI services
+    console.log('Starting film analysis for:', { trailerUrl, pdfSize: pdfData.length, inputType })
+    console.log('Environment check - USE_REAL_APIS:', process.env.USE_REAL_APIS)
+    console.log('Environment check - GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? `Present (${process.env.GEMINI_API_KEY?.substring(0, 20)}...)` : 'Missing')
+    console.log('Environment check - AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? 'Present' : 'Missing')
+    console.log('All env keys:', Object.keys(process.env).filter(key => key.includes('GEMINI') || key.includes('AWS') || key.includes('USE_REAL')))
 
-    const result = await processFilmAnalysis(pdfData, trailerUrl)
+    try {
+      const analysisResult = await processFilmAnalysis(pdfData, trailerUrl, inputType)
 
-    console.log('Film analysis completed successfully')
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify(result)
+      console.log('Film analysis completed successfully')
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          data: analysisResult
+        })
+      }
+    } catch (error) {
+      console.error('Film analysis failed:', error)
+      console.error('Error stack:', (error as Error).stack)
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: 'Film analysis failed: ' + (error as Error).message,
+          stack: process.env.NODE_ENV === 'development' ? (error as Error).stack : undefined
+        })
+      }
     }
 
   } catch (error) {

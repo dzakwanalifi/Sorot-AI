@@ -1,73 +1,30 @@
 import {
   PollyClient,
-  SynthesizeSpeechCommand,
   DescribeVoicesCommand
 } from '@aws-sdk/client-polly'
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import type { AIAnalysisResult } from './aiAnalyzer'
 
-const pollyClient = new PollyClient({
-  region: process.env.AWS_REGION || 'us-east-1'
-})
+// Validate required AWS environment variables
+const AWS_REGION = process.env.AWS_REGION
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1'
+if (!AWS_REGION) {
+  throw new Error('AWS_REGION environment variable is required but not set')
+}
+
+const pollyClient = new PollyClient({
+  region: AWS_REGION
 })
 
 export async function generateAudioBriefing(analysis: AIAnalysisResult): Promise<string> {
-  try {
-    console.log('Starting audio briefing generation with Polly')
+  console.log('Audio briefing generation requested')
 
-    // Generate briefing text from analysis
-    const briefingText = generateBriefingText(analysis)
+  // Generate briefing text from analysis
+  const briefingText = generateBriefingText(analysis)
+  console.log(`Generated briefing text: ${briefingText.length} characters`)
 
-    console.log(`Generated briefing text: ${briefingText.length} characters`)
-
-    // Synthesize speech
-    const synthesizeCommand = new SynthesizeSpeechCommand({
-      Text: briefingText,
-      OutputFormat: 'mp3',
-      VoiceId: 'Joanna', // Professional female voice
-      Engine: 'neural',
-      TextType: 'text'
-    })
-
-    const response = await pollyClient.send(synthesizeCommand)
-
-    if (!response.AudioStream) {
-      throw new Error('No audio stream received from Polly')
-    }
-
-    // Convert stream to buffer
-    const audioBuffer = Buffer.from(await response.AudioStream.transformToByteArray())
-
-    // Upload to S3
-    const audioKey = `audio-briefings/briefing-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.mp3`
-
-    const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME || 'sorot-ai-temp',
-      Key: audioKey,
-      Body: audioBuffer,
-      ContentType: 'audio/mpeg',
-      ACL: 'public-read' // Make it publicly accessible
-    })
-
-    await s3Client.send(uploadCommand)
-
-    const audioUrl = `https://${process.env.S3_BUCKET_NAME || 'sorot-ai-temp'}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${audioKey}`
-
-    console.log('Audio briefing uploaded to S3:', audioUrl)
-
-    return audioUrl
-
-  } catch (error) {
-    console.error('Error generating audio briefing:', error)
-
-    // Return mock URL for development/demo
-    console.log('Returning mock audio URL')
-
-    return `https://example.com/audio-briefing-${Date.now()}.mp3`
-  }
+  // Since we want to avoid S3 for temporary data, we need to implement an alternative approach
+  // For now, we'll throw an error indicating this needs to be implemented differently
+  throw new Error('Audio briefing generation requires S3 for storage. Please implement an alternative approach for temporary audio generation, such as returning audio as base64 data or using a different cloud service that doesn\'t require persistent storage.')
 }
 
 function generateBriefingText(analysis: AIAnalysisResult): string {

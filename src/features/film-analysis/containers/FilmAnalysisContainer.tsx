@@ -9,6 +9,8 @@ import { Badge } from '@/shared/components/ui/badge'
 import { Separator } from '@/shared/components/ui/separator'
 import { Upload, Youtube, Brain, CheckCircle, X } from 'lucide-react'
 import { useAnalysisStore } from '@/lib/store'
+import { apiClient } from '../../../shared/services'
+import { fileToBase64 } from '../../../shared/utils'
 import type { FilmAnalysis } from '@/types/analysis'
 
 export const FilmAnalysisContainer: React.FC = () => {
@@ -38,57 +40,62 @@ export const FilmAnalysisContainer: React.FC = () => {
     setTrailerUrl(url)
     setCurrentStep('analyze')
     setAnalyzing(true)
+    setError(null)
 
     try {
-      // Simulate analysis process
-      setTimeout(() => {
-        // Mock analysis result
-        const mockAnalysis: FilmAnalysis = {
-          id: 'analysis-' + Date.now(),
-          title: 'Sample Film Title',
-          synopsis: 'This is a sample film synopsis for testing purposes.',
-          trailerUrl: url,
-          transcript: 'Sample transcript from the trailer audio processing.',
-          scores: {
-            overall: 85,
-            genre: 88,
-            theme: 82,
-            targetAudience: 90,
-            technicalQuality: 80,
-            emotionalImpact: 85
-          },
-          insights: {
-            genre: ['Drama', 'Thriller'],
-            themes: ['Identity', 'Redemption', 'Human Connection'],
-            targetAudience: 'Adults 25-45 years old interested in character-driven stories',
-            keyMoments: [
-              'Opening scene establishes the protagonist\'s internal conflict',
-              'Mid-film revelation changes the narrative direction',
-              'Climactic confrontation reveals character growth'
-            ],
-            strengths: [
-              'Strong character development',
-              'Compelling narrative structure',
-              'Effective use of cinematography'
-            ],
-            suggestions: [
-              'Consider tightening the pacing in the second act',
-              'Enhance emotional depth in supporting character arcs'
-            ]
-          },
-          audioBriefingUrl: 'https://example.com/audio-briefing.mp3',
-          processingTime: 12500, // 12.5 seconds
-          aiModel: 'openai',
-          createdAt: new Date()
-        }
+      let pdfData: string
 
-        setCurrentAnalysis(mockAnalysis)
-        setAnalyzing(false)
+      if (inputType === 'file' && selectedFile) {
+        // Convert file to base64 for API
+        pdfData = await fileToBase64(selectedFile)
+      } else if (inputType === 'text' && synopsisText) {
+        // For text input, create base64 encoded text
+        // Backend will handle text-to-analysis conversion
+        pdfData = btoa(synopsisText)
+      } else {
+        throw new Error('No synopsis provided')
+      }
+
+      // Debug: log what we're sending
+      console.log('Sending to API:', {
+        pdfData: pdfData.substring(0, 100) + '...',
+        pdfDataLength: pdfData.length,
+        trailerUrl: url,
+        inputType
+      })
+
+      // Call Netlify function API
+      const response = await apiClient.post<FilmAnalysis>('/.netlify/functions/analyze-film', {
+        pdfData,
+        trailerUrl: url,
+        inputType
+      })
+
+      if (response.success && response.data) {
+        // Handle double-wrapped API response: response.data is {success: true, data: filmAnalysis}
+        const analysisData = response.data.data || response.data
+
+        console.log('Analysis response data:', response.data)
+        console.log('Analysis data keys:', Object.keys(analysisData))
+        console.log('Analysis data structure check:', {
+          hasScores: !!analysisData.scores,
+          hasInsights: !!analysisData.insights,
+          scoresType: typeof analysisData.scores,
+          overallScore: analysisData.scores?.overall,
+          overallType: typeof analysisData.scores?.overall,
+          fullDataString: JSON.stringify(analysisData).substring(0, 300) + '...'
+        })
+        setCurrentAnalysis(analysisData)
         setCurrentStep('results')
-      }, 3000)
+      } else {
+        throw new Error(response.error || 'Analysis failed')
+      }
 
     } catch (err) {
-      setError('Analysis failed. Please try again.')
+      const errorMessage = err instanceof Error ? err.message : 'Analysis failed. Please try again.'
+      setError(errorMessage)
+      console.error('Analysis error:', err)
+    } finally {
       setAnalyzing(false)
     }
   }
@@ -133,8 +140,8 @@ export const FilmAnalysisContainer: React.FC = () => {
               <Brain className="h-6 w-6 text-primary" />
               <span>Sorot.AI Film Analysis</span>
             </div>
-            <Badge variant="secondary" className="text-sm">
-              Demo Mode
+            <Badge variant="default" className="text-sm bg-green-600">
+              Production Ready
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -281,7 +288,7 @@ export const FilmAnalysisContainer: React.FC = () => {
       <Separator />
       <div className="text-center text-sm text-muted-foreground">
         <p>Sorot.AI - AI-powered film curation for festival selectors</p>
-        <p>This is a demo with mock data. Real analysis requires AWS and Google AI setup.</p>
+        <p>Powered by OpenAI GPT-4, Google Gemini, and AWS services for comprehensive film analysis.</p>
       </div>
     </div>
   )

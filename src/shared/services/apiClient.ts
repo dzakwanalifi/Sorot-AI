@@ -1,6 +1,6 @@
 import { API_CONFIG } from '../../constants'
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -10,8 +10,16 @@ export interface ApiResponse<T = any> {
 class ApiClient {
   private baseUrl: string
 
-  constructor(baseUrl: string = API_CONFIG.BASE_URL) {
-    this.baseUrl = baseUrl
+  constructor(baseUrl?: string) {
+    // In development, Vite proxy will handle /.netlify/functions routing to localhost:8888
+    // In production, use the configured BASE_URL
+    if (typeof window !== 'undefined') {
+      // Browser environment - use relative URLs for proxy in development
+      this.baseUrl = ''
+    } else {
+      // Server environment
+      this.baseUrl = baseUrl || API_CONFIG.BASE_URL
+    }
   }
 
   private async request<T>(
@@ -54,9 +62,9 @@ class ApiClient {
     }
   }
 
-  async post<T = any>(
+  async post<T = unknown>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
@@ -66,7 +74,7 @@ class ApiClient {
     })
   }
 
-  async get<T = any>(
+  async get<T = unknown>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
@@ -76,9 +84,9 @@ class ApiClient {
     })
   }
 
-  async put<T = any>(
+  async put<T = unknown>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
@@ -88,7 +96,7 @@ class ApiClient {
     })
   }
 
-  async delete<T = any>(
+  async delete<T = unknown>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
