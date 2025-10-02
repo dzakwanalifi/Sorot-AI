@@ -40,11 +40,11 @@
 ## 📦 Project Structure
 
 ### 2.1 Frontend (React + Vite)
-- [ ] Project diinisialisasi dengan Vite + React + TypeScript
-- [ ] Dependencies terinstall:
-  - [ ] @types/node, tailwindcss, postcss, autoprefixer
-  - [ ] zustand, react-dropzone, lucide-react, clsx, tailwind-merge
-  - [ ] @vitejs/plugin-react-swc, eslint, @typescript-eslint/*
+- [x] Project diinisialisasi dengan Vite + React + TypeScript
+- [x] Dependencies terinstall:
+  - [x] @types/node, tailwindcss, postcss, autoprefixer
+  - [x] zustand, react-dropzone, lucide-react, clsx, tailwind-merge
+  - [x] @vitejs/plugin-react-swc, eslint, @typescript-eslint/*
 - [ ] Tailwind CSS dikonfigurasi
 - [ ] TypeScript path mapping dikonfigurasi
 - [ ] Zustand store untuk analysis state dibuat
@@ -53,9 +53,9 @@
 - [ ] netlify/functions/ directory dibuat
 - [ ] netlify/utils/ directory dibuat
 - [ ] netlify.toml dikonfigurasi
-- [ ] Dependencies terinstall:
-  - [ ] @aws-sdk/client-bedrock-runtime, @aws-sdk/client-transcribe, @aws-sdk/client-polly
-  - [ ] @google/genai, unpdf, yt-dlp-exec, @types/node
+- [x] Dependencies terinstall:
+  - [x] @aws-sdk/client-bedrock-runtime, @aws-sdk/client-transcribe, @aws-sdk/client-polly
+  - [x] @google/genai, unpdf, yt-dlp-exec, @types/node
 
 ### 2.3 Environment Variables
 - [ ] .env.local untuk frontend dibuat

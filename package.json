@@ -1,0 +1,61 @@
+{
+  "name": "sorot-ai",
+  "version": "0.1.0",
+  "description": "AI-powered film curation platform for Indonesian film festival selectors",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.525.0",
+    "@aws-sdk/client-polly": "^3.525.0",
+    "@aws-sdk/client-transcribe": "^3.525.0",
+    "@google/genai": "^0.3.0",
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.344.0",
+    "react": "^19.0.0-rc.0",
+    "react-dom": "^19.0.0-rc.0",
+    "react-dropzone": "^14.2.3",
+    "tailwind-merge": "^2.2.1",
+    "tailwindcss": "^3.4.1",
+    "zustand": "^4.5.0",
+    "unpdf": "^0.8.1",
+    "yt-dlp-exec": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "@types/react": "^19.0.0-rc.0",
+    "@types/react-dom": "^19.0.0-rc.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitejs/plugin-react-swc": "^3.6.0",
+    "autoprefixer": "^10.4.17",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "postcss": "^8.4.33",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.0",
+    "vitest": "^1.2.1"
+  },
+  "keywords": [
+    "ai",
+    "film-analysis",
+    "react",
+    "typescript",
+    "aws-bedrock",
+    "google-gemini"
+  ],
+  "author": "Dzakwan Alifi",
+  "license": "MIT"
+}

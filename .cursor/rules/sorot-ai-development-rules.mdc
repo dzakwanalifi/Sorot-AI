@@ -1,0 +1,349 @@
+---
+description: Sorot.AI Development Rules - Comprehensive guidelines for AI-powered film curation platform
+alwaysApply: true
+---
+
+# Sorot.AI Development Rules
+
+## Project Overview
+Sorot.AI is an AI-powered film curation platform for Indonesian film festival selectors. It analyzes movie trailers and synopses using **dual AI capabilities**: **OpenAI's gpt-oss-120b model** via AWS Bedrock for text-based analysis, and **Gemini 2.5 Flash-Lite** via Google Generative AI for visual analysis of silent or music-only trailers. This hybrid approach ensures comprehensive film analysis regardless of trailer content, providing intelligent scoring, summaries, and audio briefings for sophisticated film curation decisions.
+
+## Tech Stack Requirements (2024-2025 Latest)
+- **Frontend**: React 19.x with Vite 5.x (SWC plugin) + Tailwind CSS 3.4+
+- **UI Components**: shadcn/ui (primary) + custom components for specialized features
+- **State Management**: Zustand 4.x (lightweight alternative to Redux for MVP)
+- **Backend**: Netlify Functions with Node.js 18+/TypeScript
+- **AI Model**: OpenAI gpt-oss-120b (via AWS Bedrock) + Gemini 2.5 Flash-Lite (via Google Generative AI)
+- **AWS Services**: Transcribe, Bedrock, Polly
+- **Google Services**: Gemini 2.5 Flash-Lite via Google Generative AI
+- **AWS SDK**: v3 modular packages (tree-shakable imports)
+- **File Processing**: unpdf (PDF extraction), yt-dlp-exec/ytdl-core (video download), ffmpeg-static (frame extraction)
+- **Google SDK**: @google/genai (Google Generative AI SDK)
+- **Deployment**: Netlify only (100% serverless)
+
+## AI Model Requirements (MANDATORY)
+
+### Primary Text Analysis Model
+- **Model**: OpenAI gpt-oss-120b (`openai.gpt-oss-120b-1:0`)
+- **Platform**: AWS Bedrock (serverless deployment)
+- **Key Capabilities**: Hybrid reasoning, extended thinking, efficient code generation, agentic search, tool use
+- **Use Cases**: Intelligent automation, software development, complex problem-solving, scientific analysis, research applications
+- **Context Window**: 128K tokens (ideal for detailed film analysis with full transcripts)
+- **Performance Focus**: Coding tasks, mathematical reasoning, analytical challenges, multi-step problem solving
+- **Cost Control**: Set max_tokens 1000-2000 per analysis, implement caching for repeated inputs
+
+### Visual Analysis Model (Fallback for Silent/Music-Only Content)
+- **Model**: Gemini 2.5 Flash-Lite (`gemini-2.5-flash-lite`)
+- **Platform**: Google Generative AI (via @google/genai SDK)
+- **Key Capabilities**: Multimodal analysis (text, image, video), structured output, advanced reasoning
+- **Input Support**: Text, Images, Video (<20MB inline, >20MB via file upload)
+- **Context Window**: 1M tokens (extremely large for comprehensive analysis)
+- **Performance Focus**: Low-latency visual analysis, emotion detection from imagery, storytelling interpretation
+- **Cost Control**: Default token limits, efficient for visual-only analysis
+- **Fallback Use Case**: When transcript analysis is insufficient (<50 words) or trailer is music-only
+
+## Code Structure & Architecture
+
+### Frontend Structure (Feature-Driven Architecture)
+```
+src/
+├── features/              # Feature-based organization
+│   ├── film-analysis/     # Film analysis feature
+│   │   ├── components/    # Feature-specific components
+│   │   ├── containers/    # Container components with logic
+│   │   ├── services/      # API calls and business logic
+│   │   ├── utils/         # Feature-specific utilities
+│   │   └── index.ts       # Barrel exports
+│   ├── file-upload/       # File upload feature
+│   └── audio-player/      # Audio playback feature
+├── shared/                # Shared across features
+│   ├── components/        # Reusable UI components
+│   ├── services/          # Shared API clients
+│   └── utils/             # General utilities
+├── core/                  # Core business logic
+│   └── domain/            # Domain models and logic
+├── lib/                   # Third-party library facades
+├── hooks/                 # Custom React hooks
+├── types/                 # TypeScript definitions
+├── constants/             # App constants
+└── styles/                # Global styles and Tailwind config
+```
+
+### Backend Structure (Netlify Functions)
+```
+netlify/
+├── functions/
+│   ├── analyze.ts         # Main analysis endpoint
+│   ├── upload.ts          # File upload handler
+│   └── status.ts          # Processing status checker
+└── utils/                 # Shared function utilities
+```
+
+### Path Mapping Configuration (Absolute Imports)
+```json
+// tsconfig.json or jsconfig.json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@features/*": ["src/features/*"],
+      "@shared/*": ["src/shared/*"],
+      "@core/*": ["src/core/*"],
+      "@lib/*": ["src/lib/*"],
+      "@/*": ["src/*"]
+    }
+  }
+}
+```
+
+## UI/UX Principles
+
+### Design Philosophy
+- Clean, minimalist interface
+- Single Page Application (SPA)
+- Three main areas: Input → Processing → Output
+- Focus on one primary task per screen
+
+### Component Guidelines
+- **Primary UI Library**: shadcn/ui with Tailwind CSS for consistent, accessible components
+- **Drag-and-Drop**: React Dropzone for file uploads with visual feedback
+- **Progress Indicators**: Custom progress bars with animated states and status text (include visual analysis steps)
+- **Audio Players**: Custom HTML5 audio components with playback controls and waveforms
+- **Collapsible Sections**: shadcn/ui Accordion components for expandable content
+- **Copy-to-Clipboard**: Custom implementation using Clipboard API with toast notifications
+- **File Upload Areas**: Large, interactive zones with hover states and validation feedback
+- **Video Players**: Embedded players with timestamp navigation for analysis results
+- **Visual Analysis Indicators**: Show when Gemini 2.5 Flash-Lite is used for visual analysis (fallback mode)
+
+### User Flow Requirements
+1. **Input Phase**: Large drag-and-drop area + URL input field
+2. **Processing Phase**: Animated progress bar with status updates (include visual analysis step when applicable)
+3. **Output Phase**: Sidebar navigation + detailed results display with visual analysis indicator when Gemini is used
+
+## AWS Integration Patterns
+
+### Service Usage
+- **AWS Transcribe**: Convert trailer audio to text transcript (use job polling for async processing)
+- **AWS Bedrock**: Analyze combined synopsis + transcript data (use OpenAI gpt-oss-120b model)
+- **Google Generative AI**: Visual analysis fallback for silent/music-only trailers (use Gemini 2.5 Flash-Lite)
+- **AWS Polly**: Generate audio briefings from analysis results (stream audio responses)
+
+### API Design
+- Multiple Netlify Functions: `/analyze`, `/upload`, `/status`
+- Request: Base64 PDF data + trailer URL (for analyze endpoint)
+- Response: Structured JSON with scores, text, audio URLs, transcripts, and processing status
+- Use Background Functions for long-running operations to avoid timeouts
+
+### Data Flow
+1. Extract text from PDF using **unpdf** (modern alternative to pdf-parse)
+2. Download/process trailer audio using **yt-dlp-exec** or **ytdl-core**
+3. Submit to Transcribe → poll for completion status
+4. **Decision Point**: Check transcript length (<50 words?)
+   - **If sufficient transcript**: Send transcript + synopsis to Bedrock (OpenAI gpt-oss-120b model)
+   - **If insufficient transcript**: Send video/image to Google Generative AI (Gemini 2.5 Flash-Lite for visual analysis)
+5. Convert analysis results to audio via Polly (stream response)
+6. Return comprehensive JSON response with error handling
+
+### AI Model Configuration (OpenAI gpt-oss-120b)
+- **Model ID**: `openai.gpt-oss-120b-1:0`
+- **Max Tokens**: 128K (sangat cocok untuk analisis film yang detail)
+- **Deployment**: Serverless via AWS Bedrock
+- **Best for**: Coding, scientific analysis, mathematical reasoning, complex problem-solving
+- **Usage**: Intelligent automation, software development, complex analysis, research applications
+- **Cost Optimization**: Set appropriate max_tokens (1000-2000) untuk analisis film, gunakan caching untuk input identik
+
+#### Gemini 2.5 Flash-Lite (Visual Analysis Fallback)
+- **Model ID**: `gemini-2.5-flash-lite`
+- **Platform**: Google Generative AI (@google/genai SDK)
+- **Input Limits**: <20MB inline data, >20MB via file upload
+- **Context Window**: 1M tokens (extremely large)
+- **Supported Formats**: Images (PNG, JPEG, WebP), Video (MP4, WebM, MOV)
+- **Best for**: Visual storytelling analysis, emotion detection from imagery, silent trailer interpretation
+- **Fallback Trigger**: Transcript < 50 words or music-only trailers
+- **Cost Optimization**: Use default token limits, efficient for visual-only analysis
+
+### AWS SDK v3 Best Practices
+- Use modular imports: `import { TranscribeClient, BedrockRuntimeClient } from "@aws-sdk/client-transcribe"`
+- Implement retry logic with `maxAttempts` configuration
+- Use async/await with proper error boundaries
+- Handle timeouts and implement cost optimization (cache results, batch requests)
+- Store credentials securely in Netlify environment variables
+
+## Development Workflow
+
+### Frontend Development
+- **State Management**: Zustand 4.x for lightweight global state (better than Redux for MVP)
+- **React Patterns**: Use React 19 features, functional components with hooks
+- **Error Handling**: Implement error boundaries and user-friendly error states
+- **File Handling**: React Dropzone for uploads with validation and progress feedback
+- **Styling**: Tailwind CSS with shadcn/ui components for consistent design
+- **Performance**: Lazy loading, code splitting, and optimized re-renders
+- **Testing**: Unit tests for utilities, integration tests for components
+
+### Backend Development (Netlify Functions)
+- **Function Types**: Use Background Functions for long-running AWS operations
+- **AI Integration**: OpenAI gpt-oss-120b via Bedrock Runtime + Gemini 2.5 Flash-Lite via Google Generative AI for visual analysis
+- **AWS SDK**: v3 modular imports with proper error handling and retries
+- **Google SDK**: @google/genai for Google Generative AI integration
+- **Async Operations**: Promise-based polling for Transcribe jobs with timeout handling
+- **File Processing**: unpdf for PDF extraction, yt-dlp-exec for video downloads, ffmpeg for frame extraction
+- **Visual Processing**: Extract video frames for Gemini analysis (fallback for silent trailers)
+- **Response Format**: Structured JSON with consistent error/response schemas
+- **Security**: Input validation, environment variable usage, CORS configuration
+- **Logging**: Comprehensive logging for debugging and monitoring
+- **Model Usage**: Configure max_tokens (1000-2000) untuk cost control, enable caching untuk repeated inputs
+
+### OpenAI gpt-oss-120b Implementation Guidelines
+- **Model Strengths**: Excel in coding, scientific analysis, mathematical reasoning, complex problem-solving
+- **Prompt Engineering**: Craft detailed prompts for film analysis (genre classification, emotional tone, themes, target audience)
+- **Token Management**: Use 128K context window efficiently, set appropriate max_tokens for responses
+- **Cost Optimization**: Cache identical inputs, batch similar requests, monitor token usage
+- **Error Handling**: Handle Bedrock API errors gracefully with retry logic
+- **Performance**: Model excels in multi-step reasoning for detailed film analysis
+
+### Gemini 2.5 Flash-Lite Implementation Guidelines
+- **Model Strengths**: Multimodal analysis, visual storytelling interpretation, emotion detection from imagery, video understanding
+- **SDK Usage**: @google/genai with API key authentication (simpler than Vertex AI)
+- **Fallback Logic**: Trigger when transcript < 50 words OR trailer contains minimal dialogue
+- **Data Handling**: <20MB inline base64, >20MB use file upload API
+- **Video Processing**: Support for MP4, WebM, MOV formats, YouTube URLs, custom frame rate sampling (default 1 FPS)
+- **Prompt Engineering**: Focus on visual cues - color palette, composition, character expressions, scene transitions, timestamps
+- **Context Window**: Leverage 1M token capacity for detailed visual descriptions and video analysis
+- **Cost Optimization**: Use default token limits, process only when transcript analysis insufficient
+- **Error Handling**: Graceful fallback to basic analysis if visual processing fails
+- **Video Capabilities**: Transcribe audio, provide visual descriptions, answer questions about video content, refer to specific timestamps
+
+### Testing Strategy
+- **Unit Tests**: Vitest for React components and utility functions
+- **Integration Tests**: Test Netlify Functions with mocked AWS services
+- **E2E Tests**: Playwright for critical user flows (upload → process → results)
+- **Mocking**: MSW (Mock Service Worker) for API calls, AWS SDK mocking for local dev
+- **Coverage**: Aim for 80%+ coverage on critical business logic
+- **CI/CD**: Automated testing on Netlify builds with proper environment setup
+
+## Code Quality Standards
+
+### TypeScript Configuration
+- **Strict Mode**: Enable all strict TypeScript flags for type safety
+- **Path Mapping**: Configure absolute imports with path aliases
+- **Type Definitions**: Create interfaces for all API responses, component props, and domain models
+- **Union Types**: Use discriminated unions for status enums and API states
+- **Generic Types**: Leverage TypeScript generics for reusable components and utilities
+
+### Error Handling & Resilience
+- **Frontend**: Error boundaries, user-friendly error states, retry mechanisms
+- **Backend**: Structured error responses, AWS service failure handling, timeout management
+- **Async Operations**: Proper try-catch with meaningful error messages and logging
+- **Fallback States**: Graceful degradation with skeleton loaders and error recovery options
+
+### Performance & Optimization
+- **Bundle Splitting**: Code splitting with React.lazy() and dynamic imports
+- **Image Optimization**: Next.js-like image optimization or proper sizing for media files
+- **Caching Strategy**: Service worker caching for static assets, API response caching
+- **Bundle Monitoring**: Track bundle size with Vite build analyzer, aim for <500KB initial load
+- **Runtime Performance**: React.memo, useMemo, useCallback for expensive operations
+- **Network Optimization**: Compress responses, use modern image formats (WebP/AVIF)
+
+## Security & Best Practices
+
+### Security Best Practices
+- **Input Validation**: Zod or Yup schemas for runtime type checking and sanitization
+- **File Upload Security**: Validate file types, sizes, and content; scan for malware
+- **HTTPS Only**: All communications must use HTTPS with proper SSL certificates
+- **CORS Configuration**: Restrict origins in Netlify function responses
+- **Environment Variables**: Never commit secrets; use Netlify environment variables
+- **Rate Limiting**: Implement request throttling to prevent abuse
+
+### AWS & Google Security & Cost Management
+- **IAM Policies**: Least privilege principle with minimal required permissions for AWS services
+- **API Key Security**: Store Gemini API key securely in environment variables
+- **Credential Management**: Use IAM roles for Netlify functions, rotate Gemini API key regularly
+- **Cost Monitoring**: Set up AWS budgets for Transcribe/Bedrock/Polly + Google billing alerts for Gemini
+- **Resource Optimization**: Implement caching to reduce redundant API calls across both platforms
+- **Multi-Cloud Strategy**: Use OpenAI gpt-oss-120b as primary, Gemini 2.5 Flash-Lite as fallback only
+- **Data Privacy**: Handle user data securely, implement data retention policies for both platforms
+
+## Deployment & Environment
+
+### Environment Setup
+- **Netlify Configuration**: Use netlify.toml for build settings and function configuration
+- **Node.js Version**: Specify Node.js 18+ in netlify.toml and package.json engines
+- **Environment Variables**: AWS credentials + GEMINI_API_KEY in Netlify dashboard
+- **Build Commands**: Vite build with proper output directory configuration
+- **Function Runtime**: Modern Netlify functions with ES modules support
+- **Google Setup**: Obtain Gemini API key from Google AI Studio
+
+### Monitoring & Observability
+- **Logging**: Structured logging with correlation IDs for request tracing
+- **Performance Monitoring**: Track API response times and function execution duration
+- **AWS Monitoring**: CloudWatch dashboards for service usage and costs
+- **Google Monitoring**: Gemini API usage and cost tracking via Google AI Studio dashboard
+- **Multi-Cloud Analytics**: Track which AI model was used (OpenAI primary vs Gemini fallback)
+- **Error Tracking**: Sentry or similar for client-side and server-side error tracking
+- **Analytics**: Basic usage analytics for user flow optimization, including visual analysis usage rates
+
+## File Organization Rules
+
+### Frontend File Organization
+- **Feature-Driven Structure**: Group by features, not by type (components, services together)
+- **Barrel Exports**: Use index.ts files for clean, organized imports
+- **Separation of Concerns**: Components (UI), containers (logic), services (API), utils (helpers)
+- **File Naming**: PascalCase for components, camelCase for utilities, kebab-case for files
+- **Absolute Imports**: Use configured path aliases (@features/*, @shared/*, etc.)
+
+### Backend File Organization
+- **Function Separation**: One function per file, focused on single responsibility
+- **Shared Utilities**: Common code in netlify/utils/ with proper exports
+- **TypeScript**: Full TypeScript with strict configuration and proper type definitions
+- **ES Modules**: Use ES modules throughout for better tree-shaking and compatibility
+- **Documentation**: JSDoc comments for all exported functions and complex logic
+
+### Multi-Cloud Architecture
+- **Primary Path**: OpenAI gpt-oss-120b via AWS Bedrock (95%+ use cases with sufficient transcript)
+- **Fallback Path**: Gemini 2.5 Flash-Lite via Google Generative AI (silent/music-only trailers)
+- **Decision Logic**: Check transcript length (<50 words triggers visual analysis)
+- **Cost Optimization**: Minimize Gemini usage through intelligent routing
+- **Error Handling**: Graceful degradation if either service fails
+
+## Naming Conventions
+
+### Components
+- PascalCase for component names
+- Use descriptive names (e.g., `FileUploadArea`, `AnalysisProgress`)
+- Prefix with feature name when needed
+
+### Functions & Variables
+- camelCase for functions and variables
+- Use descriptive names that explain purpose
+- Prefix boolean variables with `is`, `has`, `can`
+
+### Files & Folders
+- kebab-case for file and folder names
+- Use lowercase for consistency
+- Group related files in logical directories
+
+## Git Workflow
+
+### Commit Messages
+- Use conventional commits format
+- Include feature context in messages
+- Reference issue numbers when applicable
+
+### Branching Strategy
+- main branch for production
+- feature branches for new functionality
+- Use descriptive branch names
+
+## Documentation Requirements
+
+### Code Documentation
+- Add JSDoc comments for complex functions
+- Document component props and usage
+- Include inline comments for business logic
+- Create README with setup instructions
+
+### API Documentation
+- Document Netlify Function endpoints
+- Specify request/response formats
+- Include error response examples
+- Add authentication requirements if any
