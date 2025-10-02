@@ -45,6 +45,7 @@
   - [x] @types/node, tailwindcss, postcss, autoprefixer
   - [x] zustand, react-dropzone, lucide-react, clsx, tailwind-merge
   - [x] @vitejs/plugin-react-swc, eslint, @typescript-eslint/*
+  - [x] @google/genai, @aws-sdk/*, unpdf, yt-dlp-exec
 - [ ] Tailwind CSS dikonfigurasi
 - [ ] TypeScript path mapping dikonfigurasi
 - [ ] Zustand store untuk analysis state dibuat
