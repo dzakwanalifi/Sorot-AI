@@ -113,29 +113,29 @@
 - [ ] API Gateway integration setup
 
 ### 4.2 PDF Processing
-- [x] netlify/utils/pdfProcessor.ts dibuat
+- [x] aws/lambda/utils/pdfProcessor.ts dibuat
 - [x] extractTextFromPDF function menggunakan unpdf
 - [x] Error handling untuk invalid PDF files
 
 ### 4.3 Video/Audio Processing
-- [x] netlify/utils/videoDownloader.ts dibuat
+- [x] aws/lambda/utils/videoDownloader.ts dibuat
 - [x] downloadAudioFromYouTube function menggunakan yt-dlp-exec
 - [x] cleanupTempFile utility dibuat
 
 ### 4.4 Gemini Transcription Integration
-- [x] netlify/utils/transcribeService.ts menggunakan Gemini
+- [x] aws/lambda/utils/transcribeService.ts menggunakan Gemini
 - [x] transcribeAudio function dengan multimodal analysis
 - [x] Error handling dan fallback untuk visual analysis
 - [x] Support untuk berbagai audio formats (<20MB)
 
 ### 4.5 AI Analysis Integration
-- [x] netlify/utils/aiAnalyzer.ts dibuat
+- [x] aws/lambda/utils/aiAnalyzer.ts dibuat
 - [x] analyzeWithOpenAI function untuk Bedrock integration
 - [x] analyzeWithGemini function untuk visual analysis
 - [x] Decision logic: transcript <50 words → Gemini fallback
 
 ### 4.6 Audio Generation
-- [x] netlify/utils/audioGenerator.ts dibuat
+- [x] aws/lambda/utils/audioGenerator.ts dibuat
 - [x] generateAudioBriefing function menggunakan Polly
 - [x] SSML support untuk enhanced speech (optional)
 

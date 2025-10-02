@@ -105,37 +105,7 @@ function installFfmpeg(currentPlatform, currentArch) {
       console.log('ffmpeg installed but version check failed');
     }
 
-    // For Netlify functions, also copy to the functions directory
-    const functionsBinDir = path.join(process.cwd(), 'netlify', 'functions', 'bin');
-    if (!fs.existsSync(functionsBinDir)) {
-      fs.mkdirSync(functionsBinDir, { recursive: true });
-    }
-
-    const functionsBinaryPath = path.join(functionsBinDir, binaryName);
-    fs.copyFileSync(binaryPath, functionsBinaryPath);
-
-    if (currentPlatform !== 'win32') {
-      execSync(`chmod +x "${functionsBinaryPath}"`, { stdio: 'inherit' });
-    }
-
-    // Also copy to Netlify dev serve location if it exists
-    const netlifyDevBinDir = path.join(process.cwd(), '.netlify', 'functions-serve', 'analyze-film', 'netlify', 'bin');
-    try {
-      if (fs.existsSync(path.dirname(netlifyDevBinDir))) {
-        if (!fs.existsSync(netlifyDevBinDir)) {
-          fs.mkdirSync(netlifyDevBinDir, { recursive: true });
-        }
-        const netlifyDevBinaryPath = path.join(netlifyDevBinDir, binaryName);
-        fs.copyFileSync(binaryPath, netlifyDevBinaryPath);
-
-        if (currentPlatform !== 'win32') {
-          execSync(`chmod +x "${netlifyDevBinaryPath}"`, { stdio: 'inherit' });
-        }
-        console.log('ffmpeg also copied to Netlify dev serve location');
-      }
-    } catch (error) {
-      console.log('Netlify dev location not available for ffmpeg, skipping copy');
-    }
+    console.log(`ffmpeg installed successfully to ${binaryPath}`);
 
     console.log('ffmpeg installation completed successfully');
 
@@ -207,37 +177,7 @@ function installYtDlp() {
     const version = execSync(testCommand).toString().trim();
     console.log(`yt-dlp installed successfully: ${version}`);
 
-    // For Netlify functions, also copy to the functions directory
-    const functionsBinDir = path.join(process.cwd(), 'netlify', 'functions', 'bin');
-    if (!fs.existsSync(functionsBinDir)) {
-      fs.mkdirSync(functionsBinDir, { recursive: true });
-    }
-
-    const functionsBinaryPath = path.join(functionsBinDir, binaryName);
-    fs.copyFileSync(binaryPath, functionsBinaryPath);
-
-    if (currentPlatform !== 'win32') {
-      execSync(`chmod +x "${functionsBinaryPath}"`, { stdio: 'inherit' });
-    }
-
-    // Also copy to Netlify dev serve location if it exists
-    const netlifyDevBinDir = path.join(process.cwd(), '.netlify', 'functions-serve', 'analyze-film', 'netlify', 'bin');
-    try {
-      if (fs.existsSync(path.dirname(netlifyDevBinDir))) {
-        if (!fs.existsSync(netlifyDevBinDir)) {
-          fs.mkdirSync(netlifyDevBinDir, { recursive: true });
-        }
-        const netlifyDevBinaryPath = path.join(netlifyDevBinDir, binaryName);
-        fs.copyFileSync(binaryPath, netlifyDevBinaryPath);
-
-        if (currentPlatform !== 'win32') {
-          execSync(`chmod +x "${netlifyDevBinaryPath}"`, { stdio: 'inherit' });
-        }
-        console.log('yt-dlp also copied to Netlify dev serve location');
-      }
-    } catch (error) {
-      console.log('Netlify dev location not available, skipping copy');
-    }
+    console.log(`yt-dlp installed successfully to ${binaryPath}`);
 
     console.log('yt-dlp installation completed successfully');
 

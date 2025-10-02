@@ -6,23 +6,15 @@ import os from 'os'
 
 const TEMP_DIR = os.tmpdir()
 
-// Configure yt-dlp and ffmpeg binary paths for Netlify functions
+// Configure yt-dlp and ffmpeg binary paths for AWS Lambda container
 const YTDLP_BINARY_PATHS = [
-  // Netlify dev serve location
-  path.join(process.cwd(), '.netlify', 'functions-serve', 'analyze-film', 'netlify', 'bin', os.platform() === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'),
-  // Original local development location
-  path.join(process.cwd(), 'bin', os.platform() === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'),
-  // Netlify functions location
-  path.join(process.cwd(), 'netlify', 'functions', 'bin', os.platform() === 'win32' ? 'yt-dlp.exe' : 'yt-dlp')
+  // Local bin directory (bundled in Lambda container)
+  path.join(process.cwd(), 'bin', os.platform() === 'win32' ? 'yt-dlp.exe' : 'yt-dlp')
 ]
 
 const FFMPEG_BINARY_PATHS = [
-  // Netlify dev serve location
-  path.join(process.cwd(), '.netlify', 'functions-serve', 'analyze-film', 'netlify', 'bin', os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'),
-  // Original local development location
-  path.join(process.cwd(), 'bin', os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'),
-  // Netlify functions location
-  path.join(process.cwd(), 'netlify', 'functions', 'bin', os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg')
+  // Local bin directory (bundled in Lambda container)
+  path.join(process.cwd(), 'bin', os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg')
 ]
 
 // Check if custom binary exists in any of the possible locations, otherwise use system binary
