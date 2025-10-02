@@ -12,7 +12,7 @@ export async function processFilmAnalysis(
   const startTime = Date.now()
   let transcript: string | null = null
 
-  // Budget-conscious mode: Use mock responses for development to save costs
+  // Cost estimation mode: Enable real APIs for cost calculation
   const USE_REAL_APIS = process.env.USE_REAL_APIS === 'true'
 
   try {
