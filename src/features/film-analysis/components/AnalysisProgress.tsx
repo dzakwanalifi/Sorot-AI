@@ -61,20 +61,20 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
 
   return (
     <Card className={cn("w-full shadow-sm", className)}>
-      <CardContent className="p-4 md:p-6">
-        <div className="space-y-4 md:space-y-5">
+      <CardContent className="p-3 md:p-4 lg:p-5">
+        <div className="space-y-2 md:space-y-3 lg:space-y-4">
           {hasError ? (
             /* Error State */
-            <div className="text-center space-y-4">
-              <div className="flex flex-col items-center space-y-3">
-                <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="h-6 w-6 text-destructive" />
+            <div className="text-center space-y-3 md:space-y-4 lg:space-y-5">
+              <div className="flex flex-col items-center space-y-2 md:space-y-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 bg-destructive/10 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-destructive" />
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-base md:text-lg font-semibold text-destructive">
-                    Analysis Failed
+                <div className="space-y-1 md:space-y-2">
+                  <h3 className="text-sm md:text-base lg:text-lg font-semibold text-destructive">
+                    Failed
                   </h3>
-                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-md">
+                  <p className="text-xs md:text-sm lg:text-base text-muted-foreground leading-relaxed max-w-md">
                     {getErrorMessage(error)}
                   </p>
                 </div>
@@ -83,32 +83,32 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
               {onRetry && (
                 <Button
                   onClick={onRetry}
-                  className="min-h-[44px] px-6"
+                  className="min-h-[44px] px-4 md:px-6 lg:px-8 text-sm md:text-base lg:text-lg"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                   Try Again
                 </Button>
               )}
 
-              <div className="text-xs text-muted-foreground space-y-1">
+              <div className="text-xs md:text-sm text-muted-foreground space-y-1">
                 <p>If the problem persists, please try:</p>
                 <ul className="list-disc list-inside space-y-1 text-left max-w-xs mx-auto">
-                  <li>Checking your internet connection</li>
-                  <li>Using a different trailer URL</li>
-                  <li>Trying again in a few minutes</li>
+                  <li>Check internet connection</li>
+                  <li>Use different trailer URL</li>
+                  <li>Try again in a few minutes</li>
                 </ul>
               </div>
             </div>
           ) : (
             /* Normal Progress State */
             <>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 md:gap-4 lg:gap-5">
             <h3 className="text-sm md:text-base lg:text-lg font-semibold leading-tight">
-              {isComplete ? 'Analysis Complete' : 'Analyzing Film Trailer'}
+              {isComplete ? 'Complete' : 'Processing'}
             </h3>
             {!isComplete && (
               <div className="flex items-center justify-center sm:justify-end space-x-2">
-                <Loader2 className="h-3 w-3 md:h-4 md:w-4 animate-spin flex-shrink-0" />
+                <Loader2 className="h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 animate-spin flex-shrink-0" />
                 <span className="text-xs md:text-sm lg:text-base text-muted-foreground font-medium">
                   {progress.percentage}%
                 </span>
@@ -128,14 +128,14 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
                     <div
                       key={stage.key}
                       className={cn(
-                        "flex items-center space-x-2 md:space-x-3 p-1.5 md:p-2 lg:p-3 rounded-md transition-colors min-h-[40px] md:min-h-[44px]",
+                        "flex items-center space-x-2 md:space-x-3 p-1.5 md:p-2 lg:p-3 rounded-md transition-colors min-h-[36px] md:min-h-[40px] lg:min-h-[44px]",
                         isActive && "bg-primary/5 border border-primary/20",
                         isCompleted && !hasError && "text-green-600",
                         hasError && "opacity-50"
                       )}
                     >
                       <div className={cn(
-                        "flex items-center justify-center w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 rounded-full flex-shrink-0",
+                        "flex items-center justify-center w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 rounded-full flex-shrink-0",
                         isCompleted && !hasError
                           ? "bg-green-100 text-green-600"
                           : isActive
@@ -143,11 +143,11 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
                           : "bg-muted text-muted-foreground"
                       )}>
                         {isCompleted && !hasError ? (
-                          <CheckCircle className="h-2.5 w-2.5 md:h-3 md:w-3 lg:h-4 lg:w-4" />
+                          <CheckCircle className="h-2 w-2 md:h-2.5 md:w-2.5 lg:h-3 lg:w-3" />
                         ) : isActive ? (
-                          <Loader2 className="h-2.5 w-2.5 md:h-3 md:w-3 lg:h-4 lg:w-4 animate-spin" />
+                          <Loader2 className="h-2 w-2 md:h-2.5 md:w-2.5 lg:h-3 lg:w-3 animate-spin" />
                         ) : (
-                          <IconComponent className="h-2.5 w-2.5 md:h-3 md:w-3 lg:h-4 lg:w-4" />
+                          <IconComponent className="h-2 w-2 md:h-2.5 md:w-2.5 lg:h-3 lg:w-3" />
                         )}
                       </div>
                       <span className={cn(
@@ -159,7 +159,7 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
                         {stage.label}
                       </span>
                       {isCompleted && !hasError && (
-                        <CheckCircle className="h-2.5 w-2.5 md:h-3 md:w-3 lg:h-4 lg:w-4 text-green-600 flex-shrink-0" />
+                        <CheckCircle className="h-2 w-2 md:h-2.5 md:w-2.5 lg:h-3 lg:w-3 text-green-600 flex-shrink-0" />
                       )}
                     </div>
                   )

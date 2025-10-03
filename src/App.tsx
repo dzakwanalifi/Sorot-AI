@@ -3,26 +3,22 @@ import { FilmAnalysisContainer } from '@/features/film-analysis/containers/FilmA
 function App() {
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 md:px-6 py-4 md:py-8">
-        <header className="text-center mb-8 md:mb-12">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary mb-3 md:mb-4">
+      <div className="container mx-auto px-2 md:px-3 lg:px-4 py-2 md:py-3 lg:py-4">
+        <header className="text-center mb-3 md:mb-4 lg:mb-5">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-primary mb-1 md:mb-2">
             🎬 Sorot.AI
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-2">
-            AI-powered film curation platform for Indonesian film festival selectors
-          </p>
-          <p className="text-sm md:text-base text-muted-foreground mt-2 leading-relaxed">
-            Analyze trailers and synopses with dual AI: DeepSeek-R1 + Google Gemini
+          <p className="text-sm md:text-base lg:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            AI-powered film curation for Indonesian film festival selectors
           </p>
         </header>
 
-        <main className="pb-8">
+        <main className="pb-2 md:pb-3 lg:pb-4">
           <FilmAnalysisContainer />
         </main>
 
-        <footer className="text-center mt-8 md:mt-16 text-xs md:text-sm text-muted-foreground border-t pt-6 md:pt-8 px-4">
-          <p className="mb-1">© 2025 Sorot.AI - Built with React 19, TypeScript & Tailwind CSS</p>
-          <p className="leading-relaxed">Dual AI Analysis: DeepSeek-R1 + Google Gemini | Serverless on AWS Lambda</p>
+        <footer className="text-center mt-2 md:mt-3 lg:mt-4 text-xs text-muted-foreground border-t pt-1.5 md:pt-2 lg:pt-3 px-1.5 md:px-2">
+          <p>Sorot.AI © 2025</p>
         </footer>
       </div>
     </div>
