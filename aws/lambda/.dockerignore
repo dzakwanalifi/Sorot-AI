@@ -1,53 +1,53 @@
-# Node modules
+# Node.js
 node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Build outputs
-dist
-build
-.next
-.nuxt
+# TypeScript
+*.tsbuildinfo
 
-# Frontend files (not needed for Lambda)
-src
-public
-index.html
-vite.config.*
-tailwind.config.*
-postcss.config.*
+# Testing
+coverage
+.nyc_output
+test-results
+*.test.js
+*.spec.js
 
-# Development files
-.env*
-!.env.aws
-*.log
-.DS_Store
+# IDEs
 .vscode
 .idea
 *.swp
 *.swo
 
+# OS
+.DS_Store
+Thumbs.db
+
 # Git
 .git
 .gitignore
 
+# Docker
+Dockerfile*
+docker-compose*
+
+# AWS
+.sam
+.aws-sam
+
+# Environment files
+.env*
+
 # Documentation
 README.md
 *.md
-!aws/README.md
-
-# Scripts (keep deployment scripts)
-scripts
-!aws/scripts
-
-# Test files
-test
-test-*
-*.test.*
-*.spec.*
 
 # Temporary files
-tmp
-temp
-.tmp
+*.tmp
+*.temp
+.cache
+
+# Binaries (will be installed in container)
+bin/
+handlers/bin/

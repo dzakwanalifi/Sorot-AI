@@ -1,4 +1,4 @@
-import { createServer, IncomingMessage, ServerResponse } from 'http'
+// Removed HTTP server imports - now using Lambda RIC directly
 import { handler as analyzeHandler } from './handlers/analyze-film.js'
 import { handler as statusHandler } from './handlers/analysis-status.js'
 import { startLoggingContext, logInfo, logError } from './utils/logger.js'
@@ -38,66 +38,23 @@ interface Context {
   succeed: () => void
 }
 
-// AWS Lambda Runtime API server
-const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+// AWS Lambda handler function for RIC
+export const handler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
   try {
-    // Parse request
-    const url = new URL(req.url || '', `http://${req.headers.host}`)
-    const method = req.method || 'GET'
-
     // Start logging context for this request
-    const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    startLoggingContext(requestId)
+    startLoggingContext(context.awsRequestId)
 
-    logInfo(`Incoming ${method} request to ${url.pathname}`)
+    const requestPath = (event as any).rawPath || event.path
+    const httpMethod = (event as any).requestContext?.http?.method || event.httpMethod
+    logInfo(`Incoming ${httpMethod} request to ${requestPath}`)
+    logInfo(`Full event:`, JSON.stringify(event, null, 2))
 
-    // Collect request body
-    let body = ''
-    for await (const chunk of req) {
-      body += chunk
-    }
-
-    // Create AWS Lambda API Gateway event object
-    const event: APIGatewayProxyEvent = {
-      httpMethod: method,
-      path: url.pathname,
-      queryStringParameters: Object.fromEntries(url.searchParams),
-      headers: Object.fromEntries(
-        Object.entries(req.headers).map(([key, value]) => [
-          key,
-          Array.isArray(value) ? value.join(', ') : String(value || '')
-        ])
-      ),
-      body: body || null,
-      requestContext: {
-        requestId: requestId
-      }
-    }
-
-    // Create AWS Lambda context
-    const context: Context = {
-      callbackWaitsForEmptyEventLoop: false,
-      functionName: 'sorot-ai-lambda',
-      functionVersion: '1.0.0',
-      invokedFunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:sorot-ai-lambda',
-      memoryLimitInMB: '1024',
-      awsRequestId: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      logGroupName: '/aws/lambda/sorot-ai-lambda',
-      logStreamName: '2024/01/01/[$LATEST]abcd1234567890',
-      identity: undefined,
-      clientContext: undefined,
-      getRemainingTimeInMillis: () => 300000,
-      done: () => {},
-      fail: () => {},
-      succeed: () => {}
-    }
-
-    let result: APIGatewayProxyResult | void
+    let result: APIGatewayProxyResult
 
     // Route requests
-    if (url.pathname === '/analyze' && method === 'POST') {
+    if (requestPath === '/analyze' && httpMethod === 'POST') {
       result = await analyzeHandler(event, context)
-    } else if (url.pathname === '/status' && method === 'GET') {
+    } else if (requestPath === '/status' && httpMethod === 'GET') {
       result = await statusHandler(event, context)
     } else {
       result = {
@@ -107,40 +64,19 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
       }
     }
 
-    // Send response
-    if (result && typeof result === 'object' && 'statusCode' in result) {
-      res.statusCode = result.statusCode || 200
-
-      if (result.headers) {
-        Object.entries(result.headers).forEach(([key, value]) => {
-          res.setHeader(key, String(value))
-        })
-      }
-
-      res.end(result.body || '')
-    } else {
-      res.statusCode = 500
-      res.end(JSON.stringify({ error: 'Internal server error' }))
-    }
+    // Return result directly (Lambda RIC will handle the response)
+    return result
 
   } catch (error) {
-    logError('Server error occurred', error instanceof Error ? error : new Error(String(error)))
-    res.statusCode = 500
-    res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify({ error: 'Internal server error' }))
+    logError('Handler error occurred', error instanceof Error ? error : new Error(String(error)))
+
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      })
+    }
   }
-})
-
-// Start server on Lambda runtime API port
-const port = process.env.PORT || 8080
-server.listen(port, () => {
-  console.log(`Sorot.AI Lambda container listening on port ${port}`)
-})
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully')
-  server.close(() => {
-    process.exit(0)
-  })
-})
+}
