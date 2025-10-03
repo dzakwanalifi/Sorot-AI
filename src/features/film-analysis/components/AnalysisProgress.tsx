@@ -3,6 +3,7 @@ import { Progress } from '@/shared/components/ui/progress'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Loader2, FileText, Youtube, Brain, Volume2, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react'
+import { DeepSeek } from '@lobehub/icons'
 import { cn } from '@/lib/utils'
 
 interface AnalysisProgressProps {
@@ -18,13 +19,13 @@ interface AnalysisProgressProps {
 }
 
 const stages = [
-  { key: 'upload', label: 'Processing PDF', icon: FileText },
-  { key: 'extract', label: 'Extracting Synopsis', icon: FileText },
-  { key: 'download', label: 'Downloading Trailer', icon: Youtube },
-  { key: 'transcribe', label: 'Transcribing Audio', icon: Volume2 },
-  { key: 'analyze', label: 'AI Analysis', icon: Brain },
-  { key: 'generate', label: 'Generating Audio Brief', icon: Volume2 },
-  { key: 'complete', label: 'Analysis Complete', icon: CheckCircle }
+  { key: 'upload', label: 'Processing PDF', icon: FileText, logo: null },
+  { key: 'extract', label: 'Extracting Synopsis', icon: FileText, logo: null },
+  { key: 'download', label: 'Downloading Trailer', icon: Youtube, logo: null },
+  { key: 'transcribe', label: 'Transcribing Audio', icon: Volume2, logo: null },
+  { key: 'analyze', label: 'AI Analysis', icon: Brain, logo: DeepSeek },
+  { key: 'generate', label: 'Generating Audio Brief', icon: Volume2, logo: null },
+  { key: 'complete', label: 'Analysis Complete', icon: CheckCircle, logo: null }
 ]
 
 export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
@@ -34,8 +35,11 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
   className
 }) => {
   const currentStageIndex = stages.findIndex(stage => stage.key === progress.stage)
+  const currentStage = stages[currentStageIndex] || stages[0]
+  const LogoComponent = currentStage.logo
   const isComplete = progress.stage === 'complete'
   const hasError = !!error
+
 
   const getErrorMessage = (error: string): string => {
     const errorLower = error.toLowerCase()
@@ -102,73 +106,37 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
           ) : (
             /* Normal Progress State */
             <>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 md:gap-4 lg:gap-5">
-            <h3 className="text-sm md:text-base lg:text-lg font-semibold leading-tight">
-              {isComplete ? 'Complete' : 'Processing'}
-            </h3>
-            {!isComplete && (
-              <div className="flex items-center justify-center sm:justify-end space-x-2">
-                <Loader2 className="h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 animate-spin flex-shrink-0" />
-                <span className="text-xs md:text-sm lg:text-base text-muted-foreground font-medium">
-                  {progress.percentage}%
-                </span>
-              </div>
-            )}
-          </div>
-
               <Progress value={progress.percentage} className="w-full h-2 md:h-3" />
 
-              <div className="space-y-1 md:space-y-2 lg:space-y-3">
-                {stages.map((stage, index) => {
-                  const isActive = index === currentStageIndex && !isComplete && !hasError
-                  const isCompleted = index < currentStageIndex || isComplete
-                  const IconComponent = stage.icon
-
-                  return (
-                    <div
-                      key={stage.key}
-                      className={cn(
-                        "flex items-center space-x-2 md:space-x-3 p-1.5 md:p-2 lg:p-3 rounded-md transition-colors min-h-[36px] md:min-h-[40px] lg:min-h-[44px]",
-                        isActive && "bg-primary/5 border border-primary/20",
-                        isCompleted && !hasError && "text-green-600",
-                        hasError && "opacity-50"
-                      )}
-                    >
-                      <div className={cn(
-                        "flex items-center justify-center w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 rounded-full flex-shrink-0",
-                        isCompleted && !hasError
-                          ? "bg-green-100 text-green-600"
-                          : isActive
-                          ? "bg-primary/10 text-primary animate-pulse"
-                          : "bg-muted text-muted-foreground"
-                      )}>
-                        {isCompleted && !hasError ? (
-                          <CheckCircle className="h-2 w-2 md:h-2.5 md:w-2.5 lg:h-3 lg:w-3" />
-                        ) : isActive ? (
-                          <Loader2 className="h-2 w-2 md:h-2.5 md:w-2.5 lg:h-3 lg:w-3 animate-spin" />
-                        ) : (
-                          <IconComponent className="h-2 w-2 md:h-2.5 md:w-2.5 lg:h-3 lg:w-3" />
-                        )}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                <div className="flex items-center space-x-2 md:space-x-3">
+                  <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-primary/10 text-primary animate-pulse scale-110">
+                    {LogoComponent ? (
+                      <div className="scale-75">
+                        <LogoComponent size={16} />
                       </div>
-                      <span className={cn(
-                        "text-xs md:text-sm lg:text-base flex-1 leading-tight",
-                        isActive && !hasError && "font-medium",
-                        isCompleted && !hasError && "text-green-600",
-                        hasError && "text-muted-foreground"
-                      )}>
-                        {stage.label}
-                      </span>
-                      {isCompleted && !hasError && (
-                        <CheckCircle className="h-2 w-2 md:h-2.5 md:w-2.5 lg:h-3 lg:w-3 text-green-600 flex-shrink-0" />
-                      )}
-                    </div>
-                  )
-                })}
+                    ) : (
+                      <Loader2 className="h-2 w-2 md:h-2.5 md:w-2.5 animate-spin" />
+                    )}
+                  </div>
+                  <span className="text-xs md:text-sm font-medium text-primary">
+                    {currentStage.label}
+                  </span>
+                </div>
+
+                {progress.currentStep && progress.totalSteps && !hasError && (
+                  <div className="text-xs md:text-sm text-muted-foreground">
+                    Step {progress.currentStep} of {progress.totalSteps}
+                  </div>
+                )}
               </div>
 
-              {progress.currentStep && progress.totalSteps && !hasError && (
-                <div className="text-xs text-muted-foreground text-center">
-                  Step {progress.currentStep} of {progress.totalSteps}
+              {!isComplete && (
+                <div className="flex items-center justify-center space-x-2 pt-1">
+                  <Loader2 className="h-3 w-3 md:h-4 md:w-4 animate-spin flex-shrink-0 text-primary" />
+                  <span className="text-xs md:text-sm text-muted-foreground font-medium">
+                    {progress.percentage}%
+                  </span>
                 </div>
               )}
             </>
