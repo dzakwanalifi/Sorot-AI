@@ -11,15 +11,8 @@ class ApiClient {
   private baseUrl: string
 
   constructor(baseUrl?: string) {
-    // In development, Vite proxy will handle API routing to AWS Lambda container
-    // In production, use the configured BASE_URL
-    if (typeof window !== 'undefined') {
-      // Browser environment - use relative URLs for proxy in development
-      this.baseUrl = ''
-    } else {
-      // Server environment
-      this.baseUrl = baseUrl || API_CONFIG.BASE_URL
-    }
+    // Use the configured BASE_URL for all environments
+    this.baseUrl = baseUrl || API_CONFIG.BASE_URL
   }
 
   private async request<T>(
