@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { Label } from '@/shared/components/ui/label'
-import { Play, Check, AlertCircle, Loader2 } from 'lucide-react'
+import { Play, Check, AlertCircle, Loader2, WifiOff, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface TrailerUrlInputProps {

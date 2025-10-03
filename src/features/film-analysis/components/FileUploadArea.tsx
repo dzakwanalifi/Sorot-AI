@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react'
-import { useDropzone } from 'react-dropzone'
+import { useDropzone, FileRejection } from 'react-dropzone'
 import { Upload, FileText, X, Type, Clipboard, AlertCircle, CheckCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/shared/components/ui/button'
@@ -30,15 +30,15 @@ export const FileUploadArea: React.FC<FileUploadAreaProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
 
-  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: Array<{ file: File; errors: Array<{ code: string; message: string }> }>) => {
+  const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
     setUploadError(null)
 
     // Handle rejected files
-    if (rejectedFiles.length > 0) {
-      const rejection = rejectedFiles[0]
-      if (rejection.errors.some((error: { code: string; message: string }) => error.code === 'file-too-large')) {
+    if (fileRejections.length > 0) {
+      const rejection = fileRejections[0]
+      if (rejection.errors.some(error => error.code === 'file-too-large')) {
         setUploadError(`File size too large. Maximum size is ${Math.round(maxSize / 1024 / 1024)}MB.`)
-      } else if (rejection.errors.some((error: { code: string; message: string }) => error.code === 'file-invalid-type')) {
+      } else if (rejection.errors.some(error => error.code === 'file-invalid-type')) {
         setUploadError('Invalid file type. Please upload a PDF file only.')
       } else {
         setUploadError('File upload failed. Please try again with a valid PDF file.')
