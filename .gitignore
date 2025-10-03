@@ -59,6 +59,7 @@ progress-store.json
 
 # AWS deployment documentation (contains sensitive info)
 aws/README.md
+DEPLOYMENT_GUIDE.md
 
 # Google API keys
 *.key
