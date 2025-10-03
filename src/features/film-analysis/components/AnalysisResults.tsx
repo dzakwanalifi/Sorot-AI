@@ -76,34 +76,34 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   return (
     <div className={cn("space-y-4 md:space-y-6", className)}>
       {/* Overall Score & Detailed Scores - 2 Column Layout on Desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 md:gap-3 lg:gap-4">
         {/* Overall Score Card */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-3 md:pb-4">
-            <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <span className="text-base md:text-lg">Analysis Results</span>
-              <Badge variant="secondary" className="text-xs md:text-sm px-2 py-1 w-fit">
+          <CardHeader className="pb-1.5 md:pb-2 lg:pb-3">
+            <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-1.5 md:gap-2">
+              <span className="text-xs md:text-sm lg:text-base">Results</span>
+              <Badge variant="secondary" className="text-xs px-1.5 py-0.5 md:px-2 md:py-1 w-fit">
                 {analysis.aiModel === 'deepseek' ? 'DeepSeek-R1' : 'Gemini'} Analysis
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className={cn(
-              "p-3 md:p-4 rounded-lg border-2 text-center",
+              "p-1.5 md:p-2 lg:p-3 rounded-lg border-2 text-center",
               getScoreBgColor(overallScore)
             )}>
-              <div className="flex items-center justify-center mb-2 md:mb-3">
-                <Star className={cn("h-5 w-5 md:h-6 md:w-6 mr-2", getScoreColor(overallScore))} />
-                <span className={cn("text-xl md:text-2xl font-bold", getScoreColor(overallScore))}>
+              <div className="flex items-center justify-center mb-0.5 md:mb-1 lg:mb-2">
+                <Star className={cn("h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 mr-1 md:mr-2", getScoreColor(overallScore))} />
+                <span className={cn("text-base md:text-lg lg:text-xl font-bold", getScoreColor(overallScore))}>
                   {overallScore}/100
                 </span>
               </div>
-              <p className="text-sm md:text-base font-medium mb-1">
+              <p className="text-xs md:text-sm font-medium mb-0.5">
                 {overallScore >= 80 ? 'Excellent' :
                  overallScore >= 60 ? 'Good' : 'Needs Improvement'}
               </p>
               <p className="text-xs text-muted-foreground">
-                Film festival suitability score
+                Festival suitability score
               </p>
             </div>
           </CardContent>
@@ -111,11 +111,11 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
         {/* Detailed Scores */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-3 md:pb-4">
-            <CardTitle className="text-base md:text-lg">Detailed Scores</CardTitle>
+          <CardHeader className="pb-1.5 md:pb-2 lg:pb-3">
+            <CardTitle className="text-sm md:text-base lg:text-lg">Detailed Scores</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
               {Object.entries(analysis.scores).map(([key, score]) => {
                 if (key === 'overall') return null
                 const labels = {
@@ -127,16 +127,16 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 }
 
                 return (
-                  <div key={key} className="space-y-2 p-2 md:p-3 bg-muted/30 rounded-lg">
+                  <div key={key} className="space-y-1.5 p-1.5 md:p-2 bg-muted/30 rounded-lg">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs md:text-sm font-medium leading-tight">
+                      <span className="text-xs font-medium leading-tight">
                         {labels[key as keyof typeof labels]}
                       </span>
-                      <span className={cn("text-xs md:text-sm font-bold", getScoreColor(score))}>
+                      <span className={cn("text-xs font-bold", getScoreColor(score))}>
                         {score}/100
                       </span>
                     </div>
-                    <Progress value={score} className="h-1.5 md:h-2" />
+                    <Progress value={score} className="h-1 md:h-1.5" />
                   </div>
                 )
               })}
@@ -147,32 +147,32 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
       {/* Analysis Details - Compact Accordion */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-3 md:pb-4">
-          <CardTitle className="text-base md:text-lg">Analysis Details</CardTitle>
+        <CardHeader className="pb-1.5 md:pb-2 lg:pb-3">
+          <CardTitle className="text-sm md:text-base lg:text-lg">Details</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <Accordion type="multiple" className="w-full space-y-2">
+          <Accordion type="multiple" className="w-full space-y-1.5 md:space-y-2">
             {/* Genre & Themes */}
             <AccordionItem value="genre-themes" className="border rounded-lg">
-              <AccordionTrigger className="text-left px-3 py-2 md:px-4 md:py-3 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <Film className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm font-medium">Genre & Themes</span>
+              <AccordionTrigger className="text-left px-2 py-1.5 md:px-3 md:py-2 hover:no-underline">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <Film className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                  <span className="text-xs md:text-sm font-medium">Genre & Themes</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-3 pb-3">
-                <div className="space-y-2 md:space-y-3">
+              <AccordionContent className="px-2 pb-2 md:px-3 md:pb-3">
+                <div className="space-y-1.5 md:space-y-2">
                   <div>
-                    <h4 className="font-medium mb-1 text-sm">Genres</h4>
-                    <div className="flex flex-wrap gap-1">
+                    <h4 className="font-medium mb-0.5 md:mb-1 text-xs md:text-sm">Genres</h4>
+                    <div className="flex flex-wrap gap-0.5 md:gap-1">
                       {analysis.insights.genre.map((genre, index) => (
                         <Badge key={index} variant="secondary" className="text-xs">{genre}</Badge>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-medium mb-1 text-sm">Themes</h4>
-                    <div className="flex flex-wrap gap-1">
+                    <h4 className="font-medium mb-0.5 md:mb-1 text-xs md:text-sm">Themes</h4>
+                    <div className="flex flex-wrap gap-0.5 md:gap-1">
                       {analysis.insights.themes.map((theme, index) => (
                         <Badge key={index} variant="outline" className="text-xs">{theme}</Badge>
                       ))}
@@ -184,14 +184,14 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
             {/* Target Audience */}
             <AccordionItem value="audience" className="border rounded-lg">
-              <AccordionTrigger className="text-left px-3 py-2 md:px-4 md:py-3 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm font-medium">Target Audience</span>
+              <AccordionTrigger className="text-left px-2 py-1.5 md:px-3 md:py-2 hover:no-underline">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                  <span className="text-xs md:text-sm font-medium">Target Audience</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-3 pb-3">
-                <div className="p-2 md:p-3 bg-muted/50 rounded-lg">
+              <AccordionContent className="px-2 pb-2 md:px-3 md:pb-3">
+                <div className="p-1.5 md:p-2 bg-muted/50 rounded-lg">
                   <p className="text-xs md:text-sm leading-relaxed">{analysis.insights.targetAudience}</p>
                 </div>
               </AccordionContent>
@@ -199,17 +199,17 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
             {/* Key Moments */}
             <AccordionItem value="key-moments" className="border rounded-lg">
-              <AccordionTrigger className="text-left px-3 py-2 md:px-4 md:py-3 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm font-medium">Key Moments</span>
+              <AccordionTrigger className="text-left px-2 py-1.5 md:px-3 md:py-2 hover:no-underline">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <Target className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                  <span className="text-xs md:text-sm font-medium">Key Moments</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-3 pb-3">
-                <ul className="space-y-1 md:space-y-2">
+              <AccordionContent className="px-2 pb-2 md:px-3 md:pb-3">
+                <ul className="space-y-0.5 md:space-y-1">
                   {analysis.insights.keyMoments.map((moment, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="inline-block w-1 h-1 bg-primary rounded-full mt-2 flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-1.5 md:gap-2">
+                      <span className="inline-block w-0.5 h-0.5 md:w-1 md:h-1 bg-primary rounded-full mt-1.5 md:mt-2 flex-shrink-0" />
                       <span className="text-xs md:text-sm leading-relaxed">{moment}</span>
                     </li>
                   ))}
@@ -219,17 +219,17 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
             {/* Strengths */}
             <AccordionItem value="strengths" className="border rounded-lg">
-              <AccordionTrigger className="text-left px-3 py-2 md:px-4 md:py-3 hover:no-underline">
-                <div className="flex items-center gap-2 text-green-600">
-                  <ThumbsUp className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm font-medium">Strengths</span>
+              <AccordionTrigger className="text-left px-2 py-1.5 md:px-3 md:py-2 hover:no-underline">
+                <div className="flex items-center gap-1.5 md:gap-2 text-green-600">
+                  <ThumbsUp className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                  <span className="text-xs md:text-sm font-medium">Strengths</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-3 pb-3">
-                <ul className="space-y-1 md:space-y-2">
+              <AccordionContent className="px-2 pb-2 md:px-3 md:pb-3">
+                <ul className="space-y-0.5 md:space-y-1">
                   {analysis.insights.strengths.map((strength, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="inline-block w-1 h-1 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-1.5 md:gap-2">
+                      <span className="inline-block w-0.5 h-0.5 md:w-1 md:h-1 bg-green-500 rounded-full mt-1.5 md:mt-2 flex-shrink-0" />
                       <span className="text-xs md:text-sm leading-relaxed">{strength}</span>
                     </li>
                   ))}
@@ -239,17 +239,17 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
             {/* Suggestions */}
             <AccordionItem value="suggestions" className="border rounded-lg">
-              <AccordionTrigger className="text-left px-3 py-2 md:px-4 md:py-3 hover:no-underline">
-                <div className="flex items-center gap-2 text-blue-600">
-                  <Lightbulb className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm font-medium">Suggestions</span>
+              <AccordionTrigger className="text-left px-2 py-1.5 md:px-3 md:py-2 hover:no-underline">
+                <div className="flex items-center gap-1.5 md:gap-2 text-blue-600">
+                  <Lightbulb className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                  <span className="text-xs md:text-sm font-medium">Suggestions</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-3 pb-3">
-                <ul className="space-y-1 md:space-y-2">
+              <AccordionContent className="px-2 pb-2 md:px-3 md:pb-3">
+                <ul className="space-y-0.5 md:space-y-1">
                   {analysis.insights.suggestions.map((suggestion, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="inline-block w-1 h-1 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-1.5 md:gap-2">
+                      <span className="inline-block w-0.5 h-0.5 md:w-1 md:h-1 bg-blue-500 rounded-full mt-1.5 md:mt-2 flex-shrink-0" />
                       <span className="text-xs md:text-sm leading-relaxed">{suggestion}</span>
                     </li>
                   ))}
@@ -263,17 +263,17 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       {/* Audio Briefing - Compact */}
       {analysis.audioBriefing && (
         <Card className="shadow-sm">
-          <CardHeader className="pb-3 md:pb-4">
-            <CardTitle className="text-base md:text-lg">Audio Briefing</CardTitle>
+          <CardHeader className="pb-1.5 md:pb-2 lg:pb-3">
+            <CardTitle className="text-sm md:text-base lg:text-lg">Audio Summary</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-2 md:space-y-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Play className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+            <div className="space-y-1.5 md:space-y-2">
+              <div className="flex items-center space-x-1.5 md:space-x-2">
+                <div className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Play className="h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm">Analysis Audio Summary</p>
+                  <p className="font-medium text-xs md:text-sm">Audio Summary</p>
                   <p className="text-xs text-muted-foreground">
                     {Math.round(analysis.audioBriefing.duration || 0)}s • {analysis.audioBriefing.voice}
                   </p>
@@ -281,10 +281,10 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               </div>
 
               {/* HTML5 Audio Player */}
-              <div className="bg-muted/50 rounded-lg p-2 md:p-3">
+              <div className="bg-muted/50 rounded-lg p-1.5 md:p-2">
                 <audio
                   controls
-                  className="w-full h-10 md:h-12"
+                  className="w-full h-8 md:h-10"
                   preload="metadata"
                 >
                   <source
@@ -304,9 +304,8 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       )}
 
       {/* Footer - Compact */}
-      <div className="text-center text-xs text-muted-foreground py-2">
-        <p className="mb-1">Completed in {(analysis.processingStats.totalTime / 1000).toFixed(1)}s</p>
-        <p className="text-xs opacity-75">ID: {analysis.id}</p>
+      <div className="text-center text-xs text-muted-foreground py-1.5 md:py-2">
+        <p>ID: {analysis.id}</p>
       </div>
     </div>
   )
