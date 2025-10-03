@@ -5,7 +5,7 @@ export const API_CONFIG = {
   // AWS Lambda API Gateway endpoint
   BASE_URL: import.meta.env?.VITE_API_BASE_URL ||
     (import.meta.env?.PROD
-      ? 'https://your-api-id.execute-api.us-east-1.amazonaws.com/prod'
+      ? 'https://1sqzz9dp05.execute-api.us-east-1.amazonaws.com'
       : 'http://localhost:8080'),
   FUNCTIONS_BASE: '', // Not used with AWS Lambda
   TIMEOUT: 900000, // 15 minutes for AWS Lambda timeout
