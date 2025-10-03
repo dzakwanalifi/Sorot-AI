@@ -45,8 +45,11 @@ export const handler = async (event: APIGatewayProxyEvent, _context: Context): P
     'Content-Type': 'application/json'
   }
 
+  // Get HTTP method from API Gateway v2 format
+  const httpMethod = (event as any).requestContext?.http?.method || event.httpMethod
+
   // Handle preflight requests
-  if (event.httpMethod === 'OPTIONS') {
+  if (httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
       headers,
@@ -55,7 +58,7 @@ export const handler = async (event: APIGatewayProxyEvent, _context: Context): P
   }
 
   // Only allow GET requests
-  if (event.httpMethod !== 'GET') {
+  if (httpMethod !== 'GET') {
     return {
       statusCode: 405,
       headers,

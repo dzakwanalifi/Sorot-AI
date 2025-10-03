@@ -12,17 +12,16 @@
     "resolveJsonModule": true,
     "declaration": false,
     "outDir": "./dist",
-    "rootDir": "./aws/lambda",
+    "rootDir": "./src",
     "removeComments": true,
     "noEmitOnError": true,
     "sourceMap": false
   },
   "include": [
-    "aws/lambda/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
-    "src",
     "dist"
   ]
 }

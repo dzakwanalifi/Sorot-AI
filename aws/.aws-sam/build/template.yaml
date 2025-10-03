@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Sorot.AI Film Analysis Lambda Container - Optimized for $5 budget
+Parameters:
+  GeminiApiKey:
+    Type: String
+    NoEcho: true
+    Description: Google Gemini API Key for film analysis
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 512
+    Architectures:
+    - x86_64
+    Environment:
+      Variables:
+        GEMINI_API_KEY:
+          Ref: GeminiApiKey
+        NODE_ENV: production
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sorot-ai-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+      - arn:aws:iam::aws:policy/AmazonPollyFullAccess
+      - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowCredentials: false
+        AllowHeaders:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+        - X-Api-Key
+        - X-Amz-Security-Token
+        AllowMethods:
+        - POST
+        - GET
+        - OPTIONS
+        AllowOrigins:
+        - '*'
+  FilmAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: sorot-ai-analyzer
+      PackageType: Image
+      ImageUri:
+        Fn::Sub: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/sorot-ai-lambda:latest
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Events:
+        AnalyzeApi:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: HttpApi
+            Path: /analyze
+            Method: POST
+        StatusApi:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: HttpApi
+            Path: /status
+            Method: GET
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: sorot-ai-lambda
+      ImageScanningConfiguration:
+        ScanOnPush: true
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL for Sorot.AI
+    Value:
+      Fn::Sub: https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+    Export:
+      Name: SorotApiEndpoint
+  LambdaFunctionArn:
+    Description: ARN of the Lambda function
+    Value:
+      Fn::GetAtt:
+      - FilmAnalysisFunction
+      - Arn
+    Export:
+      Name: SorotLambdaArn
+  ECRRepositoryUri:
+    Description: ECR Repository URI
+    Value:
+      Fn::Sub: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/sorot-ai-lambda
+    Export:
+      Name: SorotECRUri
